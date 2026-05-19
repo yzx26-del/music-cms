@@ -1201,11 +1201,53 @@ function cardAudioInfo(card){
 function cardAudioHtml(card,extraClass=''){
   const audio=cardAudioInfo(card);
   if(!audio)return '';
-  return `<div class="music-card-player ${extraClass}"><div class="music-card-player-title">CARD MUSIC · ${esc(card.year||'')}</div><div class="music-card-player-name">${esc(audio.title||card.work||'对应作品')}</div><audio controls preload="none" src="${esc(audio.src)}"></audio></div>`;
+  const key=`${card.musicianId}-${card.year}`;
+  return `<div class="music-card-player ${extraClass}"><div class="music-card-player-title">CARD MUSIC · ${esc(card.year||'')}</div><div class="music-card-player-name">${esc(audio.title||card.work||'对应作品')}</div><audio controls preload="none" data-audio-key="${esc(key)}" src="${esc(audio.src)}" onplay="syncCardAudio(this,'play')" onpause="syncCardAudio(this,'pause')" onseeked="syncCardAudio(this,'seek')" ontimeupdate="syncCardAudio(this,'time')" onloadedmetadata="syncCardAudio(this,'load')"></audio></div>`;
 }
 function activeChapterAudioHtml(id){
   const chapter=getActiveChapter(id);
   return chapter?.card?cardAudioHtml(chapter.card,'mini-player'):'';
+}
+const cardAudioState={};
+let cardAudioSyncing=false;
+let activeCardAudio=null;
+function cardAudioPeers(key){
+  return Array.from(document.querySelectorAll('audio[data-audio-key]')).filter(peer=>peer.dataset.audioKey===key);
+}
+function syncCardAudio(el,type){
+  if(cardAudioSyncing||!el?.dataset?.audioKey)return;
+  const key=el.dataset.audioKey;
+  const state=cardAudioState[key]||{time:0,playing:false};
+  if(type==='load'){
+    if(state.time&&Number.isFinite(state.time))el.currentTime=Math.min(state.time,el.duration||state.time);
+    if(state.playing){
+      el.muted=el!==activeCardAudio;
+      el.play().catch(()=>{});
+    }
+    return;
+  }
+  if(type==='time'&&Math.abs((state.time||0)-el.currentTime)<.35)return;
+  state.time=Number.isFinite(el.currentTime)?el.currentTime:state.time;
+  state.playing=type==='play'||(type==='time'&&!el.paused);
+  cardAudioState[key]=state;
+  if(type==='play')activeCardAudio=el;
+  cardAudioSyncing=true;
+  cardAudioPeers(key).forEach(peer=>{
+    if(peer===el)return;
+    if(Number.isFinite(state.time)&&Math.abs(peer.currentTime-state.time)>.45){
+      try{peer.currentTime=Math.min(state.time,peer.duration||state.time);}catch(e){}
+    }
+    if(type==='play'){
+      peer.muted=true;
+      peer.play().catch(()=>{});
+    }else if(type==='pause'){
+      peer.pause();
+    }
+  });
+  if(type==='play'){
+    cardAudioPeers(key).forEach(peer=>{peer.muted=peer!==el;});
+  }
+  cardAudioSyncing=false;
 }
 const fateDecks={
   mozart:[
