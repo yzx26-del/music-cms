@@ -192,6 +192,7 @@ tbody tr:hover{background:var(--bg2)}
 .gr-card-note-title{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--t3);margin-bottom:8px}
 .gr-card-note p{margin:0 0 7px;font-size:13px;line-height:1.85}
 .gr-card-note p:last-child{margin-bottom:0}
+.gr-card-sign{text-align:right;margin-top:10px;font-family:var(--serif);font-size:13px;color:var(--t3)}
 .letter-compose textarea{width:100%;min-height:100px;border:1px solid var(--line);border-radius:4px;padding:10px;font-family:var(--serif);font-size:13px;line-height:1.8;outline:none;resize:vertical}
 .letter-compose textarea:focus{border-color:var(--t1)}
 .card-library-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
@@ -1943,6 +1944,37 @@ function musicianAge(agent,card){
   const year=parseInt(card?.year,10);
   return Number.isFinite(born)&&Number.isFinite(year)?Math.max(0,year-born):null;
 }
+function cardSceneMeta(agent,card){
+  const scenes={
+    mozart:{
+      '1763':'1763 · 欧洲巡演路上 · 夏天',
+      '1773':'1773 · 萨尔茨堡 · 秋天',
+      '1778':'1778 · 巴黎 · 夏天',
+      '1781':'1781 · 维也纳 · 春末',
+      '1782':'1782 · 维也纳 · 夏天',
+      '1786':'1786 · 维也纳 · 春天',
+      '1787':'1787 · 布拉格 · 秋天',
+      '1791':'1791 · 维也纳 · 秋天'
+    },
+    beethoven:{
+      '1778':'1778 · 波恩 · 冬天',
+      '1802':'1802 · 海利根施塔特 · 秋天',
+      '1824':'1824 · 维也纳 · 春天'
+    }
+  };
+  const year=card?.year||'某年';
+  const place=(agent?.era||'').split('·').pop()?.trim()||'某地';
+  return scenes[agent?.id]?.[String(year)]||`${year} · ${place} · 某个季节`;
+}
+function polishGrNoteLines(agent,card,lines){
+  const meta=cardSceneMeta(agent,card);
+  return (lines||[]).map((line,i)=>{
+    let text=String(line||'');
+    if(i===0)text=text.replace(/^这一页里[，,]\s*/,`${meta}，`);
+    if(i===2)text=text.replace(/^我觉得[，,]\s*/,'');
+    return text;
+  });
+}
 function grCardNote(agent,card){
   const age=musicianAge(agent,card);
   const ageText=age!==null?`${age}岁`:'这一年';
@@ -2014,7 +2046,7 @@ function grCardNote(agent,card){
     }
   };
   const picked=notes[agent?.id]?.[String(card?.year)];
-  return picked||generic;
+  return polishGrNoteLines(agent,card,picked||generic);
 }
 function openFateCard(){
   setFateAccent('');
@@ -2047,7 +2079,7 @@ function openFateCard(){
   const avatarStyle=agent.avatar?` style="--fate-avatar:url('${esc(agent.avatar)}')"`:'';
   const avatarName=agent.avatar?` data-card-name="${esc(agent.name)}"`:'';
   const grNote=grCardNote(agent,activeFateCard).map(line=>`<p>${esc(line)}</p>`).join('');
-  if(content)content.innerHTML=`<div class="floating-card-wrap"><div class="fate-card" id="active-fate-card" onclick="flipFateCard()"><div class="fate-card-inner"><div class="fate-face fate-back${avatarBack}"${avatarStyle}${avatarName}></div><div class="fate-face fate-front"><span class="card-kind ${cardKindClass(activeFateCard)}">${cardKindLabel(activeFateCard)}</span><div class="fate-period">${esc(activeFateCard.period)}</div><div class="fate-year">${esc(activeFateCard.year)}</div><div class="fate-event">${esc(activeFateCard.event)}</div><div class="fate-work">对应作品<br><strong>${esc(activeFateCard.work)}</strong></div></div></div></div></div><div class="letter-compose" id="letter-compose"><div class="gr-card-note"><div class="gr-card-note-title">Gr小姐的留言</div>${grNote}</div><textarea id="fate-letter-text" placeholder="给${esc(agent.name)}写一封信。不要试图改写历史，只写你看见了什么。"></textarea><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button class="ib" onclick="closeFateOverlay()">回到聊天</button><button class="ib solid" onclick="sendFateLetter()">寄出这封信</button></div></div>`;
+  if(content)content.innerHTML=`<div class="floating-card-wrap"><div class="fate-card" id="active-fate-card" onclick="flipFateCard()"><div class="fate-card-inner"><div class="fate-face fate-back${avatarBack}"${avatarStyle}${avatarName}></div><div class="fate-face fate-front"><span class="card-kind ${cardKindClass(activeFateCard)}">${cardKindLabel(activeFateCard)}</span><div class="fate-period">${esc(activeFateCard.period)}</div><div class="fate-year">${esc(activeFateCard.year)}</div><div class="fate-event">${esc(activeFateCard.event)}</div><div class="fate-work">对应作品<br><strong>${esc(activeFateCard.work)}</strong></div></div></div></div></div><div class="letter-compose" id="letter-compose"><div class="gr-card-note"><div class="gr-card-note-title">Gr小姐的留言</div>${grNote}<div class="gr-card-sign">——Gr小姐</div></div><textarea id="fate-letter-text" placeholder="给${esc(agent.name)}写一封信。不要试图改写历史，只写你看见了什么。"></textarea><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button class="ib" onclick="closeFateOverlay()">回到聊天</button><button class="ib solid" onclick="sendFateLetter()">寄出这封信</button></div></div>`;
   overlay?.classList.add('open');
 }
 function flipFateCard(){
