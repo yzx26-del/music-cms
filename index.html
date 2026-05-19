@@ -193,6 +193,11 @@ tbody tr:hover{background:var(--bg2)}
 .gr-card-note p{margin:0 0 7px;font-size:13px;line-height:1.85}
 .gr-card-note p:last-child{margin-bottom:0}
 .gr-card-sign{text-align:right;margin-top:10px;font-family:var(--serif);font-size:13px;color:var(--t3)}
+.music-card-player{border:1px solid var(--line);border-left:3px solid var(--t1);background:#fff;padding:10px 12px;border-radius:4px;margin:10px 0 12px}
+.music-card-player-title{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--t3);margin-bottom:7px}
+.music-card-player-name{font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:8px}
+.music-card-player audio{width:100%;height:32px;display:block}
+.mini-player{margin:0 0 10px}
 .letter-compose textarea{width:100%;min-height:100px;border:1px solid var(--line);border-radius:4px;padding:10px;font-family:var(--serif);font-size:13px;line-height:1.8;outline:none;resize:vertical}
 .letter-compose textarea:focus{border-color:var(--t1)}
 .card-library-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
@@ -1177,6 +1182,31 @@ const musicianChats={};
 let currentMusicianId='mozart';
 let activeFateCard=null;
 const activeChapters={};
+const cardAudioLibrary={
+  mozart:{
+    '1763':{src:'/assets/mozart-audio-web/1763-k7.mp3',title:'Sonata for Keyboard and Violin in D Major, K.7'},
+    '1773':{src:'/assets/mozart-audio-web/1773-symphony25.mp3',title:'Symphony No.25 in G minor, K.183'},
+    '1778':{src:'/assets/mozart-audio-web/1778-k310.mp3',title:'Piano Sonata No.8 in A minor, K.310'},
+    '1781':{src:'/assets/mozart-audio-web/1781-idomeneo.mp3',title:'Idomeneo, K.366 · Fuor del mar'},
+    '1782':{src:'/assets/mozart-audio-web/1782-serail.mp3',title:'Die Entführung aus dem Serail, K.384 · Overture'},
+    '1786':{src:'/assets/mozart-audio-web/1786-figaro.mp3',title:'Le nozze di Figaro, K.492 · Voi che sapete'},
+    '1787':{src:'/assets/mozart-audio-web/1787-don-giovanni.mp3',title:'Don Giovanni, K.527 · Là ci darem la mano'},
+    '1791':{src:'/assets/mozart-audio-web/1791-requiem.mp3',title:'Requiem in D minor, K.626 · Introitus'}
+  }
+};
+function cardAudioInfo(card){
+  if(!card)return null;
+  return cardAudioLibrary[card.musicianId]?.[String(card.year)]||null;
+}
+function cardAudioHtml(card,extraClass=''){
+  const audio=cardAudioInfo(card);
+  if(!audio)return '';
+  return `<div class="music-card-player ${extraClass}"><div class="music-card-player-title">CARD MUSIC · ${esc(card.year||'')}</div><div class="music-card-player-name">${esc(audio.title||card.work||'对应作品')}</div><audio controls preload="none" src="${esc(audio.src)}"></audio></div>`;
+}
+function activeChapterAudioHtml(id){
+  const chapter=getActiveChapter(id);
+  return chapter?.card?cardAudioHtml(chapter.card,'mini-player'):'';
+}
 const fateDecks={
   mozart:[
     {period:'神童巡演',year:'1763',event:'他坐进马车，欧洲忽然变成一张乐谱。',work:'早期键盘作品 K.6-K.9',keywords:['神童','马车','巡演','父亲']},
@@ -1432,6 +1462,7 @@ function renderMusicianAgents(openId='mozart'){
   if(!box)return;
   box.innerHTML=musicianAgents.map(a=>{
     const msgs=musicianChats[a.id].filter(m=>!(m.role!=='user'&&isSystemInterruptionText(m.text))).map(m=>`<div class="msg ${m.role==='user'?'user':'musician'}"><span class="msg-meta">${m.role==='user'?'你':a.name}</span><span class="msg-text">${escHtml(m.text)}</span></div>`).join('');
+    const player=activeChapterAudioHtml(a.id);
     return `<div class="musician-card ${a.id===openId?'open':''}" id="musician-card-${a.id}">
       <div class="musician-head" onclick="toggleMusicianAgent('${a.id}')">
         <div class="musician-avatar ${a.avatar?'has-image':''}" ${a.avatar?`style="background-image:url('${a.avatar}')"`:''}>${a.avatar?'':a.mark}</div>
@@ -1450,6 +1481,7 @@ function renderMusicianAgents(openId='mozart'){
           <button class="ib tool-red" onclick="openAgentTool('final','${a.id}')">最后的来信</button>
         </div>
         <div class="mini-chat">
+          ${player}
           <div class="mini-feed" id="mini-feed-${a.id}">${msgs}</div>
           <div class="mini-input">
             <input id="mini-input-${a.id}" placeholder="问${a.name}一个问题…" onkeydown="if(event.key==='Enter')sendMusicianMessage('${a.id}')">
@@ -2079,7 +2111,8 @@ function openFateCard(){
   const avatarStyle=agent.avatar?` style="--fate-avatar:url('${esc(agent.avatar)}')"`:'';
   const avatarName=agent.avatar?` data-card-name="${esc(agent.name)}"`:'';
   const grNote=grCardNote(agent,activeFateCard).map(line=>`<p>${esc(line)}</p>`).join('');
-  if(content)content.innerHTML=`<div class="floating-card-wrap"><div class="fate-card" id="active-fate-card" onclick="flipFateCard()"><div class="fate-card-inner"><div class="fate-face fate-back${avatarBack}"${avatarStyle}${avatarName}></div><div class="fate-face fate-front"><span class="card-kind ${cardKindClass(activeFateCard)}">${cardKindLabel(activeFateCard)}</span><div class="fate-period">${esc(activeFateCard.period)}</div><div class="fate-year">${esc(activeFateCard.year)}</div><div class="fate-event">${esc(activeFateCard.event)}</div><div class="fate-work">对应作品<br><strong>${esc(activeFateCard.work)}</strong></div></div></div></div></div><div class="letter-compose" id="letter-compose"><div class="gr-card-note"><div class="gr-card-note-title">Gr小姐的留言</div>${grNote}<div class="gr-card-sign">——Gr小姐</div></div><textarea id="fate-letter-text" placeholder="给${esc(agent.name)}写一封信。不要试图改写历史，只写你看见了什么。"></textarea><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button class="ib" onclick="closeFateOverlay()">回到聊天</button><button class="ib solid" onclick="sendFateLetter()">寄出这封信</button></div></div>`;
+  const player=cardAudioHtml(activeFateCard);
+  if(content)content.innerHTML=`<div class="floating-card-wrap"><div class="fate-card" id="active-fate-card" onclick="flipFateCard()"><div class="fate-card-inner"><div class="fate-face fate-back${avatarBack}"${avatarStyle}${avatarName}></div><div class="fate-face fate-front"><span class="card-kind ${cardKindClass(activeFateCard)}">${cardKindLabel(activeFateCard)}</span><div class="fate-period">${esc(activeFateCard.period)}</div><div class="fate-year">${esc(activeFateCard.year)}</div><div class="fate-event">${esc(activeFateCard.event)}</div><div class="fate-work">对应作品<br><strong>${esc(activeFateCard.work)}</strong></div></div></div></div></div><div class="letter-compose" id="letter-compose">${player}<div class="gr-card-note"><div class="gr-card-note-title">Gr小姐的留言</div>${grNote}<div class="gr-card-sign">——Gr小姐</div></div><textarea id="fate-letter-text" placeholder="给${esc(agent.name)}写一封信。不要试图改写历史，只写你看见了什么。"></textarea><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button class="ib" onclick="closeFateOverlay()">回到聊天</button><button class="ib solid" onclick="sendFateLetter()">寄出这封信</button></div></div>`;
   overlay?.classList.add('open');
 }
 function flipFateCard(){
