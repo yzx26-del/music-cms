@@ -2234,6 +2234,25 @@ function firstTimelineCard(id){
   if(unlocked.length)return normalizeFateCard(deck[unlocked[0]],id,unlocked[0]);
   return null;
 }
+function timeGapScale(years){
+  if(years<=3)return 'near';
+  if(years<=10)return 'middle';
+  return 'far';
+}
+function relationshipHint(agent,card){
+  const keys=(card?.keywords||[]).join(' ');
+  const text=`${card?.period||''} ${card?.event||''} ${keys}`;
+  if(/父亲|大主教|宫廷|贵族|海顿|拿破仑|法庭/.test(text))return '他和权力的关系也换了位置';
+  if(/母亲|康斯坦采|婚姻|爱人|卡尔|侄子|亲情/.test(text))return '他和身边人的距离也变了';
+  if(/观众|剧院|布拉格|掌声|沙龙|葬礼|维也纳/.test(text))return '旁人看他的眼光也不再相同';
+  if(/耳|失聪|遗书|病|咳嗽|安魂曲|死亡/.test(text))return '身体和命运都在悄悄改写他';
+  return '他看待自己的方式也在变';
+}
+function pickBySeed(items,seed){
+  if(!items?.length)return '';
+  const n=[...String(seed||'')].reduce((sum,ch)=>sum+ch.charCodeAt(0),0);
+  return items[n%items.length];
+}
 function grTimeBridge(agent,card){
   const anchor=firstTimelineCard(agent?.id);
   if(!anchor||sameChapterCard(anchor,card))return '';
@@ -2241,13 +2260,53 @@ function grTimeBridge(agent,card){
   const anchorYear=parseInt(anchor?.year,10);
   if(!Number.isFinite(currentYear)||!Number.isFinite(anchorYear))return '';
   const diff=currentYear-anchorYear;
-  const anchorPlace=sceneParts(agent,anchor).place;
-  if(diff===0)return `你们仍停在${anchorYear}年，只是列车换了一扇窗。${agent.name}没有离开，只是同一年的光线变了。`;
+  const anchorScene=sceneParts(agent,anchor);
+  const currentScene=sceneParts(agent,card);
+  const relation=relationshipHint(agent,card);
+  const seed=`${agent?.id}-${anchorYear}-${currentYear}-${card?.period}`;
+  if(diff===0){
+    return pickBySeed([
+      `你们仍停在${anchorYear}年，只是列车从${anchorScene.place}换到${currentScene.place}的另一扇窗。${agent.name}没有离开，光线却变了。`,
+      `时间没有前进，也没有后退。只是同一年里的${anchorScene.season}和${currentScene.season}互相照了一眼，${relation}。`,
+      `这仍是你初次遇见他的年份。列车没有开远，只把同一段命运转向了另一侧。`
+    ],seed);
+  }
   if(diff<0){
     const years=Math.abs(diff);
-    return `比起你在${anchorPlace}第一次遇见他的时候，时间向后退了${years}年。许多后来压到他身上的事，此刻还没有抵达。`;
+    const scale=timeGapScale(years);
+    const lines={
+      near:[
+        `列车只向后退了${years}年，像把刚写下的墨迹轻轻揭开。${agent.name}还站在离你初见不远的地方，${relation}。`,
+        `${anchorScene.place}的那次相遇还没有真正远去；回到${currentScene.place}的${currentScene.season}，许多话只是换了更年轻的声音。`
+      ],
+      middle:[
+        `时间向后折回${years}年。你曾在${anchorScene.place}见过他的后来，现在却要先看见他如何走到那里。`,
+        `从${anchorScene.place}退回${currentScene.place}，中间隔着${years}年。那些你已经知道的重量，此刻还没有完全落到他肩上。`
+      ],
+      far:[
+        `列车退回了${years}年，像从一本合上的书里抽出最早的纸页。你后来见过的${agent.name}，在这里还没有被那么多事命名。`,
+        `${years}年的距离，足够让一个人的语气、骄傲和伤口都还没有成形。${currentScene.season}的${currentScene.place}，只是命运较早的一声轻响。`
+      ]
+    };
+    return pickBySeed(lines[scale],seed);
   }
-  return `离你在${anchorPlace}第一次遇见他，时间已经向前走了${diff}年。你听见的不是预告，而是他后来真的走过的回声。`;
+  const years=diff;
+  const scale=timeGapScale(years);
+  const lines={
+    near:[
+      `离你初次遇见他，只过去了${years}年。${currentScene.place}的${currentScene.season}没有把他带远，却让${relation}。`,
+      `${years}年像一小段站台。你还认得他，只是他已经把某些犹豫藏得更深。`
+    ],
+    middle:[
+      `从${anchorScene.place}到${currentScene.place}，时间走了${years}年。${agent.name}没有变成另一个人，只是学会用新的方式承担旧问题。`,
+      `${years}年过去，${anchorScene.season}的他已经走进${currentScene.season}。${relation}，所以同一句话也不再有同一种重量。`
+    ],
+    far:[
+      `离你初次遇见他，已经隔了${years}年。时间不是把他带远，而是把他的笑、债、失去和骄傲一层层压进声音里。`,
+      `${years}年足够让一个人换掉许多表情。你仍能认出${agent.name}，但他已经带着后来生活留下的回音。`
+    ]
+  };
+  return pickBySeed(lines[scale],seed);
 }
 function polishGrNoteLines(agent,card,lines){
   const bridge=grTimeBridge(agent,card);
