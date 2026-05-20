@@ -1260,18 +1260,32 @@ function handoffOverlayAudio(){
   state.playing=true;
   cardAudioState[key]=state;
   const id=activeFateCard?.musicianId||currentMusicianId;
-  if(id)renderMusicianAgents(id);
-  const target=Array.from(document.querySelectorAll(`.musician-card audio[data-audio-key="${key}"]`))[0]
-    || cardAudioPeers(key).find(peer=>!overlay.contains(peer));
-  if(!target)return;
+  let target=cardAudioPeers(key).find(peer=>!overlay.contains(peer));
+  if(!target&&id){
+    renderMusicianAgents(id);
+    target=cardAudioPeers(key).find(peer=>!overlay.contains(peer));
+  }
+  if(!target){
+    playing.muted=false;
+    activeCardAudio=playing;
+    return;
+  }
   try{target.currentTime=Math.min(state.time,target.duration||state.time);}catch(e){}
   target.muted=false;
   activeCardAudio=target;
-  cardAudioSyncing=true;
-  playing.pause();
-  playing.muted=true;
-  cardAudioSyncing=false;
-  target.play().catch(()=>{});
+  const started=target.play();
+  if(started&&typeof started.then==='function'){
+    started.then(()=>{
+      cardAudioSyncing=true;
+      playing.pause();
+      playing.muted=true;
+      cardAudioSyncing=false;
+    }).catch(()=>{
+      playing.muted=false;
+      activeCardAudio=playing;
+      playing.play().catch(()=>{});
+    });
+  }
 }
 const fateDecks={
   mozart:[
