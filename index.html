@@ -2160,22 +2160,70 @@ function cardSceneMeta(agent,card){
     },
     beethoven:{
       '1778':'1778 · 波恩 · 冬天',
+      '1787':'1787 · 波恩 · 春天',
+      '1792':'1792 · 维也纳 · 秋天',
+      '1795':'1795 · 维也纳 · 春天',
+      '1800':'1800 · 维也纳 · 春天',
       '1802':'1802 · 海利根施塔特 · 秋天',
-      '1824':'1824 · 维也纳 · 春天'
+      '1804':'1804 · 维也纳 · 春天',
+      '1805':'1805 · 维也纳 · 秋天',
+      '1808':'1808 · 维也纳 · 冬天',
+      '1809':'1809 · 维也纳 · 春天',
+      '1812':'1812 · 特普利茨 · 夏天',
+      '1815':'1815 · 维也纳 · 秋天',
+      '1818':'1818 · 维也纳 · 冬天',
+      '1823':'1823 · 维也纳 · 春天',
+      '1824':'1824 · 维也纳 · 春天',
+      '1826':'1826 · 维也纳 · 夏天',
+      '1827':'1827 · 维也纳 · 春天'
     }
   };
   const year=card?.year||'某年';
   const place=(agent?.era||'').split('·').pop()?.trim()||'某地';
   return scenes[agent?.id]?.[String(year)]||`${year} · ${place} · 某个季节`;
 }
+function sceneParts(agent,card){
+  const parts=cardSceneMeta(agent,card).split('·').map(x=>x.trim());
+  return {year:parts[0]||card?.year||'某年',place:parts[1]||'某地',season:parts[2]||'某个季节'};
+}
+function narrativeSceneIntro(agent,card){
+  const {year,place,season}=sceneParts(agent,card);
+  const age=musicianAge(agent,card);
+  const ageText=age!==null?`${age}岁的${agent.name}`:`${agent.name}`;
+  const period=card?.period||'这一页';
+  const templates=[
+    `${year}年的${season}，${ageText}正在${place}走进“${period}”这段命运。`,
+    `${year}年的${season}，在${place}，${ageText}被推到“${period}”这一页前。`,
+    `${year}年的${season}，${place}的光落下来，${ageText}正站在“${period}”的门口。`
+  ];
+  const seed=String(agent?.id||'')+String(card?.year||'')+String(period);
+  const n=[...seed].reduce((sum,ch)=>sum+ch.charCodeAt(0),0);
+  return templates[n%templates.length];
+}
+function grTimeBridge(agent,card){
+  const anchor=getPersonaAnchor(agent?.id);
+  if(!anchor||sameChapterCard(anchor,card))return '';
+  const currentYear=parseInt(card?.year,10);
+  const anchorYear=parseInt(anchor?.year,10);
+  if(!Number.isFinite(currentYear)||!Number.isFinite(anchorYear))return '';
+  const diff=currentYear-anchorYear;
+  if(diff===0)return '这仍是你第一次见到他的那一年，只是命运把同一段时间翻到了另一面。';
+  if(diff<0){
+    const years=Math.abs(diff);
+    return `这张牌比你第一次见到他早了${years}年。你看见的，是他尚未走到那次相遇之前的样子。`;
+  }
+  return `这张牌比你第一次见到他晚了${diff}年。它像一封从后来的日子递回来的信，让你先听见时间往前走的声音。`;
+}
 function polishGrNoteLines(agent,card,lines){
-  const meta=cardSceneMeta(agent,card);
-  return (lines||[]).map((line,i)=>{
+  const bridge=grTimeBridge(agent,card);
+  const result=(lines||[]).map((line,i)=>{
     let text=String(line||'');
-    if(i===0)text=text.replace(/^这一页里[，,]\s*/,`${meta}，`);
+    if(i===0)text=text.replace(/^这一页里[，,]\s*[^。]*。?/,narrativeSceneIntro(agent,card));
     if(i===2)text=text.replace(/^我觉得[，,]\s*/,'');
     return text;
   });
+  if(bridge)result.splice(1,0,bridge);
+  return result;
 }
 function grCardNote(agent,card){
   const age=musicianAge(agent,card);
