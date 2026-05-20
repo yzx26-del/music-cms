@@ -2190,13 +2190,13 @@ function narrativeSceneIntro(agent,card){
   const {year,place,season}=sceneParts(agent,card);
   const age=musicianAge(agent,card);
   const ageText=age!==null?`${age}岁的${agent.name}`:`${agent.name}`;
-  const period=card?.period||'这一页';
+  const event=String(card?.event||'命运正在改换方向').replace(/[。.!！]$/,'');
   const templates=[
-    `${year}年的${season}，${ageText}正在${place}走进“${period}”这段命运。`,
-    `${year}年的${season}，在${place}，${ageText}被推到“${period}”这一页前。`,
-    `${year}年的${season}，${place}的光落下来，${ageText}正站在“${period}”的门口。`
+    `${year}年的${season}，${place}的日子并不安静。${ageText}正经历着：${event}。`,
+    `${year}年的${season}，${place}的光落在他身上。${ageText}还不知道，${event}。`,
+    `${year}年的${season}，${ageText}停在${place}。在这一刻，${event}。`
   ];
-  const seed=String(agent?.id||'')+String(card?.year||'')+String(period);
+  const seed=String(agent?.id||'')+String(card?.year||'')+String(card?.period||'');
   const n=[...seed].reduce((sum,ch)=>sum+ch.charCodeAt(0),0);
   return templates[n%templates.length];
 }
@@ -2217,19 +2217,21 @@ function grTimeBridge(agent,card){
   const anchorYear=parseInt(anchor?.year,10);
   if(!Number.isFinite(currentYear)||!Number.isFinite(anchorYear))return '';
   const diff=currentYear-anchorYear;
-  if(diff===0)return '这仍是你第一次见到他的那一年，只是命运把同一段时间翻到了另一面。';
+  const anchorPlace=sceneParts(agent,anchor).place;
+  if(diff===0)return `你们仍停在${anchorYear}年，只是列车换了一扇窗。${agent.name}没有离开，只是同一年的光线变了。`;
   if(diff<0){
     const years=Math.abs(diff);
-    return `这张牌比你第一次见到他早了${years}年。你看见的，是他尚未走到那次相遇之前的样子。`;
+    return `比起你在${anchorPlace}第一次遇见他的时候，时间向后退了${years}年。许多后来压到他身上的事，此刻还没有抵达。`;
   }
-  return `这张牌比你第一次见到他晚了${diff}年。它像一封从后来的日子递回来的信，让你先听见时间往前走的声音。`;
+  return `离你在${anchorPlace}第一次遇见他，时间已经向前走了${diff}年。你听见的不是预告，而是他后来真的走过的回声。`;
 }
 function polishGrNoteLines(agent,card,lines){
   const bridge=grTimeBridge(agent,card);
   const result=(lines||[]).map((line,i)=>{
     let text=String(line||'');
-    if(i===0)text=text.replace(/^这一页里[，,]\s*[^。]*。?/,narrativeSceneIntro(agent,card));
+    if(i===0)text=narrativeSceneIntro(agent,card);
     if(i===2)text=text.replace(/^我觉得[，,]\s*/,'');
+    text=text.replace(/这张牌/g,'这个时刻').replace(/这一页/g,'这段时间');
     return text;
   });
   if(bridge)result.splice(1,0,bridge);
