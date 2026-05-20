@@ -1249,6 +1249,30 @@ function syncCardAudio(el,type){
   }
   cardAudioSyncing=false;
 }
+function handoffOverlayAudio(){
+  const overlay=document.getElementById('fate-overlay');
+  if(!overlay)return;
+  const playing=Array.from(overlay.querySelectorAll('audio[data-audio-key]')).find(audio=>!audio.paused&&!audio.ended);
+  if(!playing)return;
+  const key=playing.dataset.audioKey;
+  const state=cardAudioState[key]||{};
+  state.time=Number.isFinite(playing.currentTime)?playing.currentTime:state.time||0;
+  state.playing=true;
+  cardAudioState[key]=state;
+  const id=activeFateCard?.musicianId||currentMusicianId;
+  if(id)renderMusicianAgents(id);
+  const target=Array.from(document.querySelectorAll(`.musician-card audio[data-audio-key="${key}"]`))[0]
+    || cardAudioPeers(key).find(peer=>!overlay.contains(peer));
+  if(!target)return;
+  try{target.currentTime=Math.min(state.time,target.duration||state.time);}catch(e){}
+  target.muted=false;
+  activeCardAudio=target;
+  cardAudioSyncing=true;
+  playing.pause();
+  playing.muted=true;
+  cardAudioSyncing=false;
+  target.play().catch(()=>{});
+}
 const fateDecks={
   mozart:[
     {period:'神童巡演',year:'1763',event:'他坐进马车，欧洲忽然变成一张乐谱。',work:'早期键盘作品 K.6-K.9',keywords:['神童','马车','巡演','父亲']},
@@ -2525,6 +2549,7 @@ function clearLetterMemory(){
 function closeFateOverlay(e){
   const overlay=document.getElementById('fate-overlay');
   if(!e||e.target===overlay){
+    handoffOverlayAudio();
     overlay?.classList.remove('open');
     stopFateAmbient();
   }
