@@ -2200,8 +2200,18 @@ function narrativeSceneIntro(agent,card){
   const n=[...seed].reduce((sum,ch)=>sum+ch.charCodeAt(0),0);
   return templates[n%templates.length];
 }
+function firstTimelineCard(id){
+  const state=getGameState(id);
+  if(state?.firstCard)return enrichFateCard(state.firstCard,id);
+  const anchor=getPersonaAnchor(id);
+  if(anchor)return enrichFateCard(anchor,id);
+  const unlocked=unlockedIndexes(id);
+  const deck=getDeck(id);
+  if(unlocked.length)return normalizeFateCard(deck[unlocked[0]],id,unlocked[0]);
+  return null;
+}
 function grTimeBridge(agent,card){
-  const anchor=getPersonaAnchor(agent?.id);
+  const anchor=firstTimelineCard(agent?.id);
   if(!anchor||sameChapterCard(anchor,card))return '';
   const currentYear=parseInt(card?.year,10);
   const anchorYear=parseInt(anchor?.year,10);
@@ -2322,6 +2332,7 @@ function openFateCard(){
   const pool=mainLocked.length?mainLocked:(riftLocked.length?riftLocked:(locked.length?locked:deck.map((_,i)=>i)));
   const index=pool[Math.floor(Math.random()*pool.length)];
   activeFateCard={...deck[index],index,musicianId:agent.id,musicianName:agent.name};
+  ensurePersonaAnchor(activeFateCard);
   const title=document.getElementById('fate-title'),sub=document.getElementById('fate-sub'),content=document.getElementById('fate-content'),overlay=document.getElementById('fate-overlay');
   if(title)title.textContent=`${agent.name} · 命运卡牌`;
   if(sub)sub.textContent=cardKind(activeFateCard)==='rift'?'主线已经走完，支线卡开始浮现。它们补完裂缝，不影响人物结局。':'先抽满主线卡。主线完成后，人物结局解锁，支线卡才会浮现。';
