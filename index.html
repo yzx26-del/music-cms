@@ -197,6 +197,7 @@ tbody tr:hover{background:var(--bg2)}
 .music-card-player-title{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--t3);margin-bottom:7px}
 .music-card-player-name{font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:8px}
 .music-card-player audio{width:100%;height:32px;display:block}
+.card-audio-slot audio{width:100%;height:32px;display:block}
 .mini-player{margin:0 0 10px}
 .letter-compose textarea{width:100%;min-height:100px;border:1px solid var(--line);border-radius:4px;padding:10px;font-family:var(--serif);font-size:13px;line-height:1.8;outline:none;resize:vertical}
 .letter-compose textarea:focus{border-color:var(--t1)}
@@ -1202,90 +1203,84 @@ function cardAudioHtml(card,extraClass=''){
   const audio=cardAudioInfo(card);
   if(!audio)return '';
   const key=`${card.musicianId}-${card.year}`;
-  return `<div class="music-card-player ${extraClass}"><div class="music-card-player-title">CARD MUSIC · ${esc(card.year||'')}</div><div class="music-card-player-name">${esc(audio.title||card.work||'对应作品')}</div><audio controls preload="none" data-audio-key="${esc(key)}" src="${esc(audio.src)}" onplay="syncCardAudio(this,'play')" onpause="syncCardAudio(this,'pause')" onseeked="syncCardAudio(this,'seek')" ontimeupdate="syncCardAudio(this,'time')" onloadedmetadata="syncCardAudio(this,'load')"></audio></div>`;
+  return `<div class="music-card-player ${extraClass}"><div class="music-card-player-title">CARD MUSIC · ${esc(card.year||'')}</div><div class="music-card-player-name">${esc(audio.title||card.work||'对应作品')}</div><div class="card-audio-slot" data-audio-key="${esc(key)}" data-audio-src="${esc(audio.src)}"></div></div>`;
 }
 function activeChapterAudioHtml(id){
   const chapter=getActiveChapter(id);
   return chapter?.card?cardAudioHtml(chapter.card,'mini-player'):'';
 }
 const cardAudioState={};
-let cardAudioSyncing=false;
-let activeCardAudio=null;
-function cardAudioPeers(key){
-  return Array.from(document.querySelectorAll('audio[data-audio-key]')).filter(peer=>peer.dataset.audioKey===key);
-}
-function syncCardAudio(el,type){
-  if(cardAudioSyncing||!el?.dataset?.audioKey)return;
-  const key=el.dataset.audioKey;
-  const state=cardAudioState[key]||{time:0,playing:false};
-  if(type==='load'){
-    if(state.time&&Number.isFinite(state.time))el.currentTime=Math.min(state.time,el.duration||state.time);
-    if(state.playing){
-      el.muted=el!==activeCardAudio;
-      el.play().catch(()=>{});
-    }
-    return;
-  }
-  if(type==='time'&&Math.abs((state.time||0)-el.currentTime)<.35)return;
-  state.time=Number.isFinite(el.currentTime)?el.currentTime:state.time;
-  state.playing=type==='play'||(type==='time'&&!el.paused);
-  cardAudioState[key]=state;
-  if(type==='play')activeCardAudio=el;
-  cardAudioSyncing=true;
-  cardAudioPeers(key).forEach(peer=>{
-    if(peer===el)return;
-    if(Number.isFinite(state.time)&&Math.abs(peer.currentTime-state.time)>.45){
-      try{peer.currentTime=Math.min(state.time,peer.duration||state.time);}catch(e){}
-    }
-    if(type==='play'){
-      peer.muted=true;
-      peer.play().catch(()=>{});
-    }else if(type==='pause'){
-      peer.pause();
-    }
+let sharedCardAudio=null;
+let sharedCardAudioKey='';
+function ensureSharedCardAudio(){
+  if(sharedCardAudio)return sharedCardAudio;
+  sharedCardAudio=document.createElement('audio');
+  sharedCardAudio.controls=true;
+  sharedCardAudio.preload='none';
+  sharedCardAudio.style.width='100%';
+  sharedCardAudio.style.height='32px';
+  sharedCardAudio.addEventListener('timeupdate',()=>{
+    if(!sharedCardAudioKey)return;
+    const state=cardAudioState[sharedCardAudioKey]||{};
+    state.time=sharedCardAudio.currentTime||0;
+    state.playing=!sharedCardAudio.paused&&!sharedCardAudio.ended;
+    cardAudioState[sharedCardAudioKey]=state;
   });
-  if(type==='play'){
-    cardAudioPeers(key).forEach(peer=>{peer.muted=peer!==el;});
-  }
-  cardAudioSyncing=false;
+  sharedCardAudio.addEventListener('play',()=>{
+    if(!sharedCardAudioKey)return;
+    if(sharedCardAudio.duration&&sharedCardAudio.currentTime>=sharedCardAudio.duration-.15){
+      try{sharedCardAudio.currentTime=0;}catch(e){}
+    }
+    cardAudioState[sharedCardAudioKey]={...(cardAudioState[sharedCardAudioKey]||{}),playing:true};
+  });
+  sharedCardAudio.addEventListener('pause',()=>{
+    if(!sharedCardAudioKey)return;
+    cardAudioState[sharedCardAudioKey]={...(cardAudioState[sharedCardAudioKey]||{}),time:sharedCardAudio.currentTime||0,playing:false};
+  });
+  sharedCardAudio.addEventListener('ended',()=>{
+    if(!sharedCardAudioKey)return;
+    cardAudioState[sharedCardAudioKey]={...(cardAudioState[sharedCardAudioKey]||{}),time:0,playing:false};
+    try{sharedCardAudio.currentTime=0;}catch(e){}
+  });
+  return sharedCardAudio;
 }
-function handoffOverlayAudio(){
+function mountCardAudioPlayer(preferredKey=''){
+  const slots=Array.from(document.querySelectorAll('.card-audio-slot'));
+  if(!slots.length)return;
   const overlay=document.getElementById('fate-overlay');
-  if(!overlay)return;
-  const playing=Array.from(overlay.querySelectorAll('audio[data-audio-key]')).find(audio=>!audio.paused&&!audio.ended);
-  if(!playing)return;
-  const key=playing.dataset.audioKey;
-  const state=cardAudioState[key]||{};
-  state.time=Number.isFinite(playing.currentTime)?playing.currentTime:state.time||0;
-  state.playing=true;
-  cardAudioState[key]=state;
-  const id=activeFateCard?.musicianId||currentMusicianId;
-  let target=cardAudioPeers(key).find(peer=>!overlay.contains(peer));
-  if(!target&&id){
-    renderMusicianAgents(id);
-    target=cardAudioPeers(key).find(peer=>!overlay.contains(peer));
+  const openOverlay=overlay?.classList.contains('open');
+  let slot=null;
+  if(preferredKey){
+    const matched=slots.filter(s=>s.dataset.audioKey===preferredKey);
+    slot=openOverlay
+      ? (matched.find(s=>overlay.contains(s))||matched[0])
+      : (matched.find(s=>!overlay?.contains(s))||matched[0]);
   }
-  if(!target){
-    playing.muted=false;
-    activeCardAudio=playing;
-    return;
+  if(!slot&&openOverlay)slot=slots.find(s=>overlay.contains(s));
+  if(!slot)slot=slots.find(s=>!overlay?.contains(s))||slots[0];
+  const audio=ensureSharedCardAudio();
+  const key=slot.dataset.audioKey;
+  const src=slot.dataset.audioSrc;
+  if(!key||!src)return;
+  const oldKey=sharedCardAudioKey;
+  if(oldKey&&oldKey!==key){
+    cardAudioState[oldKey]={...(cardAudioState[oldKey]||{}),time:audio.currentTime||0,playing:!audio.paused&&!audio.ended};
   }
-  try{target.currentTime=Math.min(state.time,target.duration||state.time);}catch(e){}
-  target.muted=false;
-  activeCardAudio=target;
-  const started=target.play();
-  if(started&&typeof started.then==='function'){
-    started.then(()=>{
-      cardAudioSyncing=true;
-      playing.pause();
-      playing.muted=true;
-      cardAudioSyncing=false;
-    }).catch(()=>{
-      playing.muted=false;
-      activeCardAudio=playing;
-      playing.play().catch(()=>{});
-    });
+  if(oldKey!==key||audio.getAttribute('src')!==src){
+    const shouldKeepPlaying=!audio.paused&&!audio.ended;
+    sharedCardAudioKey=key;
+    audio.src=src;
+    const state=cardAudioState[key]||{};
+    audio.onloadedmetadata=()=>{
+      if(Number.isFinite(state.time)&&state.time>0){
+        try{audio.currentTime=Math.min(state.time,audio.duration||state.time);}catch(e){}
+      }
+      if(state.playing||shouldKeepPlaying)audio.play().catch(()=>{});
+      audio.onloadedmetadata=null;
+    };
   }
+  slot.innerHTML='';
+  slot.appendChild(audio);
 }
 const fateDecks={
   mozart:[
@@ -1706,6 +1701,7 @@ function renderMusicianAgents(openId='mozart'){
       </div>
     </div>`;
   }).join('');
+  mountCardAudioPlayer(sharedCardAudioKey);
 }
 function toggleMusicianAgent(id){
   currentMusicianId=id;
@@ -2442,6 +2438,7 @@ function openFateCard(){
   const player=cardAudioHtml(activeFateCard);
   if(content)content.innerHTML=`<div class="floating-card-wrap"><div class="fate-card" id="active-fate-card" onclick="flipFateCard()"><div class="fate-card-inner"><div class="fate-face fate-back${avatarBack}"${avatarStyle}${avatarName}></div><div class="fate-face fate-front"><span class="card-kind ${cardKindClass(activeFateCard)}">${cardKindLabel(activeFateCard)}</span><div class="fate-period">${esc(activeFateCard.period)}</div><div class="fate-year">${esc(activeFateCard.year)}</div><div class="fate-event">${esc(activeFateCard.event)}</div><div class="fate-work">对应作品<br><strong>${esc(activeFateCard.work)}</strong></div></div></div></div></div><div class="letter-compose" id="letter-compose">${player}<div class="gr-card-note"><div class="gr-card-note-title">Gr小姐的留言</div>${grNote}<div class="gr-card-sign">——Gr小姐</div></div><textarea id="fate-letter-text" placeholder="给${esc(agent.name)}写一封信。不要试图改写历史，只写你看见了什么。"></textarea><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button class="ib" onclick="closeFateOverlay()">回到聊天</button><button class="ib solid" onclick="sendFateLetter()">寄出这封信</button></div></div>`;
   overlay?.classList.add('open');
+  mountCardAudioPlayer(`${activeFateCard.musicianId}-${activeFateCard.year}`);
 }
 function flipFateCard(){
   const card=document.getElementById('active-fate-card');
@@ -2622,8 +2619,10 @@ function clearLetterMemory(){
 function closeFateOverlay(e){
   const overlay=document.getElementById('fate-overlay');
   if(!e||e.target===overlay){
-    handoffOverlayAudio();
+    const keepAudioKey=sharedCardAudioKey;
     overlay?.classList.remove('open');
+    renderMusicianAgents(currentMusicianId||activeFateCard?.musicianId||'mozart');
+    mountCardAudioPlayer(keepAudioKey);
     stopFateAmbient();
   }
 }
