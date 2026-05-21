@@ -2318,16 +2318,54 @@ function grTimeBridge(agent,card){
   };
   return pickBySeed(lines[scale],seed);
 }
+function beethovenHearingMarker(card){
+  const year=parseInt(card?.year,10);
+  if(!Number.isFinite(year))return '';
+  const firstRing=1798;
+  const fullSilence=1818;
+  const funeral=1827;
+  if(year<firstRing){
+    return `这时，他还听得见训斥、掌声和街上的车轮声。离耳鸣第一次把房间变窄，还有${firstRing-year}年；离世界彻底关上门，还有${fullSilence-year}年。`;
+  }
+  if(year<fullSilence){
+    return `耳鸣已经进了他的生活，像一盏不会熄灭的暗灯。离完全失聪还有${fullSilence-year}年；他失去的声音越多，写下的声音越不肯退让。`;
+  }
+  if(year===fullSilence){
+    return `这一年，外面的声音几乎从他身边撤走。此后他写出的音乐，会越来越像从寂静深处凿出来的石碑。`;
+  }
+  if(year<funeral){
+    return `世界已经安静了${year-fullSilence}年。旁人以为沉默会把他关住，他却把沉默写成更大的房间。`;
+  }
+  return `声音离开他已经太久。可维也纳为他停下脚步时，沉默反而成了全城最后一次合唱。`;
+}
+function beethovenTimeBridge(agent,card){
+  const anchor=firstTimelineCard(agent?.id);
+  if(!anchor||sameChapterCard(anchor,card))return '';
+  const currentYear=parseInt(card?.year,10);
+  const anchorYear=parseInt(anchor?.year,10);
+  if(!Number.isFinite(currentYear)||!Number.isFinite(anchorYear))return '';
+  const diff=currentYear-anchorYear;
+  if(diff===0)return '';
+  const years=Math.abs(diff);
+  const direction=diff>0?'向前':'向后';
+  if(years<=3)return `列车只${direction}挪动了${years}年，像同一场风暴换了一个窗口。你还能认出他，只是他手里的力气已经换了方向。`;
+  if(years<=10)return `列车${direction}穿过${years}年。对贝多芬来说，这不是日历翻页，而是听觉、骄傲和孤独一起移动。`;
+  return `列车${direction}越过${years}年，足够让一个人失去许多声音，也足够让他把失去变成更硬的回声。`;
+}
 function polishGrNoteLines(agent,card,lines){
-  const bridge=grTimeBridge(agent,card);
+  const bridge=agent?.id==='beethoven'?beethovenTimeBridge(agent,card):grTimeBridge(agent,card);
   const result=(lines||[]).map((line,i)=>{
     let text=String(line||'');
-    if(i===0)text=narrativeSceneIntro(agent,card);
+    if(i===0&&agent?.id!=='beethoven')text=narrativeSceneIntro(agent,card);
     if(i===2)text=text.replace(/^我觉得[，,]\s*/,'');
     text=text.replace(/这张牌/g,'这个时刻').replace(/这一页/g,'这段时间');
     return text;
   });
-  if(bridge)result.splice(1,0,bridge);
+  if(agent?.id==='beethoven'){
+    const marker=beethovenHearingMarker(card);
+    if(marker)result.splice(1,0,marker);
+  }
+  if(bridge)result.splice(agent?.id==='beethoven'?2:1,0,bridge);
   return result;
 }
 function grCardNote(agent,card){
@@ -2384,19 +2422,89 @@ function grCardNote(agent,card){
     },
     beethoven:{
       '1778':[
-        `这一页里，贝多芬8岁。在这之前，父亲已经把“下一个神童”的期待压到他身上；现在，他坐在波恩的琴凳前，练习比夸奖来得更早。`,
-        `这件事解释了他后来为什么总像在和世界较劲。若把它从音乐史里拿出来看，这是一种过早被要求证明自己的童年。`,
-        `我觉得，他后来的倔强不是凭空长出来的。那是一个孩子先学会了咬紧牙关。`
+        `1778年的冬天，波恩。8岁的贝多芬被父亲推到琴凳前；在他成为任何人眼里的天才之前，训斥已经先替掌声坐下。`,
+        `发生的不是一场童年演出，而是一种过早的审判。父亲想把他打磨成下一个莫扎特，他却先学会了把害怕压进手指里。`,
+        `这件事真正伤到他的，是“音乐”还没成为自由，就先成了证明自己的刑具。后来那个总像在反击世界的人，起点也许只是一个不敢弹错的孩子。`
+      ],
+      '1787':[
+        `1787年的春天，波恩。17岁的贝多芬原本奔向维也纳，想靠近莫扎特和更大的世界；可母亲病重的消息，把他从未来拉回家中。`,
+        `他没有完成那次神童式的登场，先完成了一次告别。母亲去世后，家里的责任落到他肩上，温柔从此不再是轻的东西。`,
+        `这件事真正改变他的，是让他过早明白：天赋不能替人留住亲人。贝多芬后来的硬，并不等于没有柔软，只是柔软被他收得很深。`
+      ],
+      '1792':[
+        `1792年的秋天，维也纳。22岁的贝多芬带着海顿的名片进城；在这之前，波恩已经太小，装不下他要被听见的野心。`,
+        `他不是来做一个安分学生的。他进入维也纳，是把自己放进最严苛的听众面前，也把旧规则摆到自己面前。`,
+        `这件事真正点燃他的，是“我要被承认”的饥饿。你面对的不是谦卑的新人，而是一把还没出鞘、已经知道自己会伤人的刀。`
+      ],
+      '1795':[
+        `1795年的春天，维也纳。25岁的贝多芬终于站上城里的舞台；此前他忍过外乡人的轻视，也忍过“海顿学生”的标签。`,
+        `这一次，维也纳记住的是他的手。钢琴不再只是谋生工具，而是他第一次公开宣告：我不是谁的附属品。`,
+        `这件事真正让他上瘾的，是掌声背后的控制感。贝多芬不是在讨好观众，他是在试探自己能不能让一座城市闭嘴听他说话。`
+      ],
+      '1800':[
+        `1800年的春天，维也纳。30岁的贝多芬已经以钢琴家站稳脚跟；现在，他把第一部交响曲推到公众面前。`,
+        `他没有立刻砸碎旧世界，而是先证明自己懂得旧世界的语法。第一声雷很轻，却已经让人听见天边有东西在移动。`,
+        `这件事真正危险的地方，是他开始从演奏者变成制定声音规则的人。从这里起，他不只要被听见，他还要改变别人怎样听。`
       ],
       '1802':[
-        `这一页里，贝多芬32岁。在这之前，耳疾已经一点点夺走他赖以生存的声音；现在，他写下《海利根施塔特遗书》，却没有真的离开。`,
-        `这件事是他人生的裂口。对旁人来说这是悲剧，对他来说更像一次站在悬崖边的自我审判：不能再像从前那样听见世界，却还要继续写给世界听。`,
-        `我觉得，这张牌不要急着安慰。你可以先承认：有些痛苦不会因为被理解就变小。`
+        `1802年的秋天，海利根施塔特。32岁的贝多芬已经被耳疾逼到边缘；在这之前，他最依赖的声音，正在一点点背叛他。`,
+        `他写下像遗书一样的文字，把死亡、羞耻和不甘全都放在纸上。可他没有离开，他把“活着”变成一次更艰难的决定。`,
+        `这件事真正伤到他的，是音乐家竟然要失去听觉。不要急着安慰他；先承认，有些痛苦不会因为被理解就变小。`
+      ],
+      '1804':[
+        `1804年的春天，维也纳。34岁的贝多芬刚从耳疾的羞耻里爬出来，又把英雄理想押在拿破仑身上。`,
+        `他原本打算把《第三交响曲》献给拿破仑。可拿破仑称帝的消息传来，他愤怒地把献词从总谱上刮掉，纸被刮破，名字也被刮掉。`,
+        `这件事真正伤到他的，不只是一个政治人物变了样。是他第一次发现：英雄也会背叛英雄，而音乐必须从崇拜里醒过来。`
+      ],
+      '1805':[
+        `1805年的秋天，维也纳。35岁的贝多芬把自由、忠诚和救赎写进《费德里奥》；此前他已经习惯了不妥协，却还没学会失败的重量。`,
+        `歌剧首演并没有得到他想要的胜利。法军占领维也纳，观众席空空荡荡，他写出的牢门没有关住暴君，却先关住了自己的执念。`,
+        `这件事真正残酷的地方，是正义也会卖不出票。贝多芬不是不会失败，他只是失败以后仍要逼作品继续站起来。`
+      ],
+      '1808':[
+        `1808年的冬天，维也纳。38岁的贝多芬已经把耳疾、孤独和怒气压进乐谱；现在，一场漫长而寒冷的音乐会把他推到公众面前。`,
+        `《第五》和《第六》在同一晚被送上舞台，乐手疲惫，厅里冰冷，秩序也不完美。后来人叫它命运，当时它更像一场硬撑到底的冲撞。`,
+        `这件事真正说明的，是贝多芬不等条件变好才开口。他把不顺、寒冷和混乱也写进声音里，让命运不是敲门，而是重锤。`
+      ],
+      '1809':[
+        `1809年的春天，维也纳。39岁的贝多芬躲在炮火中的地下室；此前他还相信贵族庇护可以给艺术留下一点稳定。`,
+        `拿破仑的炮弹落进城里，他用枕头捂住耳朵，保护那副已经衰坏的听觉。《皇帝》协奏曲在这样的震动里留下庄严的轮廓。`,
+        `这件事真正改变他的，是让“庇护”显得不再可靠。世界在外面开火，他只能把秩序写进乐谱里。`
+      ],
+      '1812':[
+        `1812年的夏天，特普利茨。42岁的贝多芬写下一封没有明确收信地址的情书；此前他已经习惯被尊敬，却仍渴望被选择。`,
+        `“不朽的爱人”没有变成稳定的日子，只留下一团永远无法完全拆开的谜。爱在这里不是胜利，而是他最不会处理的软肋。`,
+        `这件事真正让他狼狈的，是他能和命运争吵，却未必能和亲密相处。强硬的人并不一定更会被爱。`
+      ],
+      '1815':[
+        `1815年的秋天，维也纳。45岁的贝多芬在弟弟去世后，开始争夺侄子卡尔的监护权；此前他已经把孤独误认成了责任。`,
+        `他想做一个父亲，却把爱带进法庭、判决和控制里。卡尔成了他晚年最深的牵挂，也成了他最难承认的失败。`,
+        `这件事真正刺痛人的，是伟大并不保证一个人懂得怎样爱。贝多芬在这里不是英雄，他只是一个把亲情握得太紧的人。`
+      ],
+      '1818':[
+        `1818年的冬天，维也纳。48岁的贝多芬几乎完全失聪；此前外界已经离他越来越远，现在连日常交谈也要靠谈话簿留下痕迹。`,
+        `他不再主要面对观众，而是面对自己脑内那座无人能进入的教堂。《槌子键琴奏鸣曲》像一道门，门后不是安慰，是更坚硬的孤独。`,
+        `这件事真正可怕的，是沉默没有让他温和，反而让他更不肯妥协。听不见世界以后，他开始要求世界听见更难的东西。`
+      ],
+      '1823':[
+        `1823年的春天，维也纳。53岁的贝多芬在失聪深处写《庄严弥撒》；此前他已经把公共胜利推到极限，现在转身去问更高的沉默。`,
+        `他写给上帝，却不像一个已经得到答案的人。宗教在这里不是安宁，而是一场迟迟没有回声的质问。`,
+        `这件事真正沉重的地方，是他并不因为听不见就停止发问。贝多芬的晚期不是升天，而是把疑问刻得更深。`
       ],
       '1824':[
-        `这一页里，贝多芬54岁。在这之前，他已经长期生活在近乎完全的沉默里；现在，《第九交响曲》的合唱响起，他却听不见掌声。`,
-        `这件事后来成为音乐史的公共时刻。人们转身向他鼓掌，那一刻胜利和残酷并不矛盾，它们同时站在舞台上。`,
-        `我觉得，他不是战胜了命运。他只是让命运也不得不站起来听。`
+        `1824年的春天，维也纳。54岁的贝多芬已经长期生活在沉默里；此前他失去听觉，却没有失去让众人一起开口的野心。`,
+        `《第九交响曲》的合唱响起时，他听不见掌声。有人转过他的身体，让他看见观众的欢呼，胜利和残酷同时站在舞台上。`,
+        `这件事真正震动人的，不是他战胜了命运。是命运夺走他的听觉以后，仍不得不站起来听他写下的合唱。`
+      ],
+      '1826':[
+        `1826年的夏天，维也纳。56岁的贝多芬被侄子卡尔的自杀未遂击中；此前他多年争夺亲情，最后却几乎把亲情逼到悬崖边。`,
+        `枪声没有写进乐谱，却震动了他的晚期四重奏。那些弦乐不像给世界的宣言，更像一个人终于听见自己控制欲的回声。`,
+        `这件事真正不能轻轻带过的是：他爱卡尔，也伤了卡尔。贝多芬在这里最像凡人，也最难被原谅。`
+      ],
+      '1827':[
+        `1827年的春天，维也纳。56岁的贝多芬走到生命尽头；此前他和失聪、孤独、疾病、亲情都搏斗过，最后只剩天气和床边的人。`,
+        `他死后，维也纳有上万人送葬。那个曾被父亲推到琴凳前的孩子，最终让一座城市在寂静里承认他的名字。`,
+        `这件事真正完成的，不是一个英雄神话，而是一条漫长的反击弧线。他听不见悼词，但沉默终于替他说完了。`
       ]
     }
   };
@@ -2516,7 +2624,8 @@ function openCardLibrary(){
   document.getElementById('fate-sub').textContent='主线卡走完人生；支线卡补完裂缝。人物结局只要求主线完成。';
   const lockedAvatarClass=agent.avatar?' avatar-locked':'';
   const lockedAvatarStyle=agent.avatar?` style="--fate-avatar:url('${esc(agent.avatar)}')"`:'';
-  document.getElementById('fate-content').innerHTML=`<div class="card-progress"><span>主线 ${mainDone}/${mainTotal}</span>${riftTotal?`<span>支线 ${riftDone}/${riftTotal}</span>`:''}</div><div class="card-library-grid">${deck.map((c,i)=>unlocked.has(i)?`<div class="archive-card ${cardKind(c)}-card"><span class="card-kind ${cardKindClass(c)}">${cardKindLabel(c)}</span><div class="fate-period">${esc(c.period)}</div><div class="fate-year">${esc(c.year)}</div><div class="fate-event">${esc(c.event)}</div><div class="fate-work">${esc(c.work)}</div></div>`:`<div class="archive-card locked ${cardKind(c)}-card${lockedAvatarClass}"${lockedAvatarStyle}><div><span class="card-kind ${cardKindClass(c)}">${cardKindLabel(c)}</span><br><i class="ti ti-lock"></i><br>第 ${i+1} 张<br>尚未抽出</div></div>`).join('')}</div><div style="margin-top:14px;display:flex;gap:10px;justify-content:space-between;align-items:center"><button class="ib" onclick="closeFateOverlay()">返回 Gr 小姐聊天</button><button class="ib ${mainComplete?'solid':''}" onclick="${mainComplete?`openAgentTool('ending','${agent.id}')`:`toast('还差 ${left} 张主线卡，才能查看人物结局')`}">${mainComplete?'人物结局':`人物结局 · 主线还差 ${left} 张`}</button></div>`;
+  const beethovenScale=agent.id==='beethoven'?`<div class="travel-letter" style="margin:0 0 14px;border-left-color:#111"><strong>听力命运标尺</strong><br>声音仍在：1778-1797 · 耳鸣逼近：1798-1802 · 与寂静搏斗：1803-1817 · 寂静深处：1818-1827</div>`:'';
+  document.getElementById('fate-content').innerHTML=`${beethovenScale}<div class="card-progress"><span>主线 ${mainDone}/${mainTotal}</span>${riftTotal?`<span>支线 ${riftDone}/${riftTotal}</span>`:''}</div><div class="card-library-grid">${deck.map((c,i)=>unlocked.has(i)?`<div class="archive-card ${cardKind(c)}-card"><span class="card-kind ${cardKindClass(c)}">${cardKindLabel(c)}</span><div class="fate-period">${esc(c.period)}</div><div class="fate-year">${esc(c.year)}</div><div class="fate-event">${esc(c.event)}</div><div class="fate-work">${esc(c.work)}</div></div>`:`<div class="archive-card locked ${cardKind(c)}-card${lockedAvatarClass}"${lockedAvatarStyle}><div><span class="card-kind ${cardKindClass(c)}">${cardKindLabel(c)}</span><br><i class="ti ti-lock"></i><br>第 ${i+1} 张<br>尚未抽出</div></div>`).join('')}</div><div style="margin-top:14px;display:flex;gap:10px;justify-content:space-between;align-items:center"><button class="ib" onclick="closeFateOverlay()">返回 Gr 小姐聊天</button><button class="ib ${mainComplete?'solid':''}" onclick="${mainComplete?`openAgentTool('ending','${agent.id}')`:`toast('还差 ${left} 张主线卡，才能查看人物结局')`}">${mainComplete?'人物结局':`人物结局 · 主线还差 ${left} 张`}</button></div>`;
   document.getElementById('fate-overlay')?.classList.add('open');
 }
 function openTravelLetter(id){
