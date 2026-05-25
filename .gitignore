@@ -1,0 +1,15 @@
+.DS_Store
+
+*.zip
+
+node_modules
+
+dist
+build
+
+.vercel
+
+letteragent-debug-package/
+
+*.log.vercel
+.env*

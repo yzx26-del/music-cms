@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>音乐信札 · 经典小游戏</title>
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap"></noscript>
+<style>
+:root{--bg:#f4f1eb;--panel:#fbfaf7;--line:#d6d0c4;--line-strong:#a69a87;--text:#161411;--muted:#6b6458;--accent:#191714;--accent-soft:#ece7dc;--shadow:0 16px 40px rgba(22,20,17,.08);--serif:'Noto Serif SC','Songti SC','STSong',serif;--sans:'Noto Sans SC','PingFang SC','Microsoft YaHei',Arial,sans-serif;--mono:'IBM Plex Mono','SFMono-Regular',Menlo,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;background:radial-gradient(circle at top,#fffdf8 0,#f4f1eb 42%,#ece6da 100%);color:var(--text);font:14px/1.65 var(--sans)}
+a{color:inherit}
+button,input,select{font:inherit}
+.shell{max-width:1200px;margin:0 auto;padding:28px 20px 36px}
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:20px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.title{margin-top:8px;font:700 clamp(30px,4vw,44px)/1.12 var(--serif)}
+.sub{margin-top:10px;max-width:620px;color:var(--muted)}
+.top-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.btn{height:38px;padding:0 14px;border:1px solid var(--line-strong);background:var(--panel);color:var(--text);cursor:pointer;border-radius:999px;transition:.15s ease}
+.btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(22,20,17,.08)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.layout{display:grid;grid-template-columns:minmax(290px,360px) minmax(0,1fr);gap:18px}
+.panel{background:rgba(251,250,247,.9);border:1px solid rgba(166,154,135,.42);box-shadow:var(--shadow);backdrop-filter:blur(10px)}
+.side{padding:18px;border-radius:28px}
+.main{border-radius:34px;overflow:hidden;display:flex;flex-direction:column;min-height:720px}
+.side-section+.side-section{margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+.section-label{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.agent-card{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:18px;background:var(--panel)}
+.avatar{width:52px;height:52px;border-radius:50%;background:#1a1916 center 20%/cover no-repeat;border:1px solid var(--accent);flex-shrink:0;display:flex;align-items:center;justify-content:center;font:700 13px/1 var(--mono);letter-spacing:.08em;color:#f6efe3;text-transform:uppercase}
+.agent-name{font:700 20px/1.2 var(--serif)}
+.agent-era{font-size:12px;color:var(--muted);margin-top:3px}
+.picker{width:100%;height:40px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--text);outline:none}
+.picker:focus,.composer:focus{border-color:var(--accent)}
+.rules{display:grid;gap:10px}
+.rule{padding:10px 12px;border:1px dashed var(--line);border-radius:14px;background:rgba(255,255,255,.55)}
+.rule strong{display:block;font:600 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.fate-card{padding:16px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(180deg,#fffdf8,#f5f0e5)}
+.fate-year{font:600 12px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.fate-period{margin-top:10px;font:700 24px/1.2 var(--serif)}
+.fate-event{margin-top:10px}
+.fate-work{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted)}
+.feed{flex:1;padding:20px;display:flex;flex-direction:column;gap:12px;background:linear-gradient(180deg,rgba(255,255,255,.52),rgba(255,255,255,.18))}
+.msg{max-width:min(82%,640px);padding:12px 14px;border-radius:18px;border:1px solid var(--line);background:rgba(255,255,255,.78)}
+.msg.user{align-self:flex-end;background:var(--accent);border-color:var(--accent);color:#fff}
+.msg.system{align-self:stretch;max-width:none;background:transparent;border-style:dashed;color:var(--muted)}
+.msg-head{display:block;font:600 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.msg.user .msg-head{color:rgba(255,255,255,.72)}
+.composer{display:flex;gap:10px;padding:18px;border-top:1px solid rgba(166,154,135,.42);background:rgba(251,250,247,.95)}
+.composer input{flex:1;min-width:0;height:42px;padding:0 14px;border:1px solid var(--line);border-radius:14px;background:#fff;color:var(--text);outline:none}
+.composer button{flex-shrink:0}
+.toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid rgba(166,154,135,.42);background:rgba(251,250,247,.96)}
+.toolbar-title{font:700 22px/1.2 var(--serif)}
+.toolbar-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.turns{font:600 12px/1 var(--mono);letter-spacing:.12em;color:var(--muted)}
+@media (max-width:920px){
+  .layout{grid-template-columns:1fr}
+  .main{min-height:620px}
+  .topbar{flex-direction:column}
+  .top-actions{justify-content:flex-start}
+}
+</style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <div>
+        <div class="eyebrow">Classic Music Chat Game</div>
+        <h1 class="title">音乐信札 · 三轮通信</h1>
+        <p class="sub">从主站的智能体界面抽出一个最小独立玩法。每局只做一件事：抽一张命运卡，然后用三次发言机会，和那位音乐家完成一段短通信。</p>
+      </div>
+      <div class="top-actions">
+        <a class="btn" href="index.html">返回主站</a>
+        <a class="btn" href="music-travel.html">打开原版长流程</a>
+      </div>
+    </div>
+
+    <div class="layout">
+      <aside class="panel side">
+        <section class="side-section">
+          <div class="section-label">Agent Selection</div>
+          <div class="agent-card">
+            <div class="avatar" id="avatar"></div>
+            <div>
+              <div class="agent-name" id="agent-name">莫扎特</div>
+              <div class="agent-era" id="agent-era">古典主义 · 维也纳</div>
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <select class="picker" id="musician-picker" aria-label="选择音乐家"></select>
+          </div>
+        </section>
+
+        <section class="side-section">
+          <div class="section-label">Rules</div>
+          <div class="rules">
+            <div class="rule"><strong>Step 1</strong> 抽一张命运卡，它会决定这一局的历史切口。</div>
+            <div class="rule"><strong>Step 2</strong> 你只有三次发言机会。每次都直接对音乐家说话。</div>
+            <div class="rule"><strong>Step 3</strong> 三轮后本局封存，再抽下一张。</div>
+          </div>
+        </section>
+
+        <section class="side-section">
+          <div class="section-label">Current Card</div>
+          <div class="fate-card" id="fate-card">
+            <div class="fate-year">WAITING</div>
+            <div class="fate-period">先抽一张命运卡</div>
+            <div class="fate-event">这一页还没有展开。</div>
+            <div class="fate-work">作品线索：—</div>
+          </div>
+        </section>
+
+        <section class="side-section">
+          <div class="section-label">Gr Note</div>
+          <p class="hint" id="gr-note">先选音乐家，再开始本局。这里不会替你说话，只会给出切入口。</p>
+        </section>
+      </aside>
+
+      <main class="panel main">
+        <div class="toolbar">
+          <div>
+            <div class="toolbar-title">通信现场</div>
+            <div class="toolbar-sub" id="toolbar-sub">抽卡后开始。每局会锁定一个人生时刻。</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+            <div class="turns" id="turns">0 / 3</div>
+            <button class="btn primary" id="draw-btn" type="button">抽命运卡</button>
+            <button class="btn" id="reset-btn" type="button">重开本局</button>
+          </div>
+        </div>
+        <div class="feed" id="feed">
+          <div class="msg system">
+            <span class="msg-head">Gr 小姐</span>
+            <span>问题不必太大。问一句具体的话，历史才会回答。</span>
+          </div>
+        </div>
+        <form class="composer" id="composer">
+          <input id="input" type="text" maxlength="120" placeholder="例如：今夜你最不肯承认的事是什么" autocomplete="off">
+          <button class="btn primary" id="send-btn" type="submit">寄出</button>
+        </form>
+      </main>
+    </div>
+  </div>
+
+<script>
+const musicians = [
+  {
+    id: 'mozart',
+    name: '莫扎特',
+    mark: 'WM',
+    era: '古典主义 · 维也纳',
+    avatar: '/assets/mozart-avatar.png',
+    intro: '他明亮，但并不轻松。请从账单、剧院、母亲、自由这些地方切入。',
+    cards: [
+      { period: '神童巡演', year: '1763', event: '他坐进马车，欧洲忽然变成一张乐谱。', work: '早期键盘作品 K.6-K.9' },
+      { period: '巴黎之夜', year: '1778', event: '母亲死在巴黎，他把噩耗折进信里。', work: 'Piano Sonata No.8 in A minor, K.310' },
+      { period: '费加罗之门', year: '1786', event: '他让仆人唱出贵族不愿听见的话。', work: 'Le nozze di Figaro, K.492' },
+      { period: '最后的房间', year: '1791', event: '有人敲门订下安魂曲，他没有问太多。', work: 'Requiem in D minor, K.626' }
+    ]
+  },
+  {
+    id: 'beethoven',
+    name: '贝多芬',
+    mark: 'LvB',
+    era: '古典主义到浪漫主义 · 波恩/维也纳',
+    avatar: '/assets/beethoven-avatar.png',
+    intro: '别直接安慰他。承认他的痛苦、野心和羞耻，比励志话更有用。',
+    cards: [
+      { period: '抵达维也纳', year: '1792', event: '他拿着海顿的名片，野心藏在了行李中。', work: 'Piano Sonata No.1, Op.2 No.1', persona: '带刀进城的外乡人。野心强，急着被承认。' },
+      { period: '海利根施塔特', year: '1802', event: '他写下遗书，却选择活着。', work: 'Heiligenstadt Testament', persona: '站在死亡边缘的人。最脆弱，也最危险。' },
+      { period: '消失的英雄', year: '1804', event: '王冠压垮了英雄，拿破仑的名字从纸上刮掉。', work: 'Symphony No.3 Eroica, Op.55', persona: '理想破裂的革命者。' },
+      { period: '合唱响起', year: '1824', event: '他听不见掌声，只看见众人回头。', work: 'Symphony No.9, Op.125', persona: '听不见掌声的胜利者。庄严、疲惫、克制。' }
+    ]
+  },
+  {
+    id: 'bach',
+    name: '巴赫',
+    mark: 'JSB',
+    era: '巴洛克 · 魏玛/科滕/莱比锡',
+    avatar: '',
+    intro: '不要把他只当成教堂里的圣像。家庭、职位、手稿和倔强，才是更好的入口。',
+    cards: [
+      { period: '魏玛的管风琴楼座', year: '1708', event: '他在楼座上试音，脚下的风箱和礼拜秩序都要服从精确。', work: 'Toccata and Fugue in D minor, BWV 565', persona: '年轻而自负的键盘匠人。耳朵锋利，对平庸没有耐性。' },
+      { period: '科滕的世俗庭院', year: '1721', event: '他把勃兰登堡协奏曲装订好，递给一位未必会真正聆听的侯爵。', work: 'Brandenburg Concertos, BWV 1046-1051', persona: '在宫廷里谈判艺术价值的人。冷静，务实，知道华丽也要找买家。' },
+      { period: '莱比锡的咖啡馆', year: '1734', event: '教会之外，他让羽管键琴和闲谈在咖啡香里并肩。', work: 'Coffee Cantata, BWV 211', persona: '被职责磨过的人。严厉里带一点玩笑，知道生活比教义更嘈杂。' },
+      { period: '看不见的复调', year: '1749', event: '眼睛坏了，线条却还在纸上往更深处走。', work: 'The Art of Fugue, BWV 1080', persona: '暮年工匠。身体衰败，但脑中秩序比任何时候都清晰。' }
+    ]
+  },
+  {
+    id: 'chopin',
+    name: '肖邦',
+    mark: 'FC',
+    era: '浪漫主义 · 华沙/巴黎',
+    avatar: '',
+    intro: '他擅长把大事压成小声音。流亡、病、沙龙和钢琴，比爱情传闻更重要。',
+    cards: [
+      { period: '离境前夜', year: '1830', event: '他离开华沙时并不知道，这几乎就是永别。', work: 'Piano Concerto No.1 in E minor, Op.11', persona: '年轻、敏感、还未学会把乡愁藏进礼貌。' },
+      { period: '马略卡的湿墙', year: '1838', event: '修道院的潮气压着肺，他却在雨滴声里把前奏曲写得越来越短。', work: '24 Preludes, Op.28', persona: '病中的流亡者。说话轻，心里却一直在抵抗。' },
+      { period: '巴黎沙龙的背光处', year: '1842', event: '他在贵族客厅里弹得极轻，像怕声音碰碎空气。', work: 'Ballade No.3 in A-flat major, Op.47', persona: '被精致世界包围的独行者。克制，挑剔，不愿被粗暴理解。' },
+      { period: '最后的房间', year: '1849', event: '肺像烧过的纸，他仍在替朋友和学生改最后几处装饰音。', work: 'Mazurka in F minor, Op.68 No.4', persona: '临终前仍维持体面的病人。温柔，却不肯示弱。' }
+    ]
+  },
+  {
+    id: 'debussy',
+    name: '德彪西',
+    mark: 'CD',
+    era: '印象主义前夜 · 巴黎',
+    avatar: '',
+    intro: '别急着谈“印象派”标签。先从夜色、丑闻、债务和他对俗气的厌恶问起。',
+    cards: [
+      { period: '午后牧神醒来', year: '1894', event: '他让管弦乐像光一样散开，巴黎开始听见不肯落地的和声。', work: 'Prélude à l’après-midi d’un faune', persona: '刚刚找到自己语言的人。优雅，傲慢，对旧规则缺乏耐心。' },
+      { period: '佩利亚斯首演季', year: '1902', event: '歌剧让支持者着迷，也让保守派恼火。', work: 'Pelléas et Mélisande', persona: '被争议包围的革新者。表面平静，内里像绷紧的弦。' },
+      { period: '海的逃亡线', year: '1905', event: '私生活的流言在身后翻滚，他却把海写成了更大的呼吸。', work: 'La mer', persona: '逃离指责的人。敏感、自我、用音乐遮住现实噪声。' },
+      { period: '炮火后的练习曲', year: '1915', event: '病痛和战争逼近，他仍把键盘拆成一组更锋利的句子。', work: 'Études', persona: '晚年的清醒者。身体衰弱，判断反而更冷。' }
+    ]
+  },
+  {
+    id: 'ravel',
+    name: '拉威尔',
+    mark: 'MR',
+    era: '法国现代主义 · 巴黎',
+    avatar: '',
+    intro: '他不是只会精巧编织的钟表匠。失败、自尊、战争和机械式执念，都是入口。',
+    cards: [
+      { period: '罗马大奖失利', year: '1905', event: '评委会把门关上，他的名字却因此比往常更响。', work: 'Miroirs', persona: '外表克制、内里记仇的青年。精确就是他的反击。' },
+      { period: '前线卡车司机', year: '1916', event: '战争把他从沙龙拖进泥路，发动机声替代了排练室。', work: 'Le tombeau de Couperin', persona: '被战争压扁睡眠的人。寡言，疲惫，仍保持手工般的控制。' },
+      { period: '单一旋律的机器', year: '1928', event: '他让一个节奏反复向前，像一台不肯停机的城市装置。', work: 'Boléro', persona: '成名后的实验者。冷静，机敏，对误读保持礼貌的讽刺。' },
+      { period: '脑中的静电', year: '1932', event: '车祸后，音符在脑中愈发清楚，手却开始背叛他。', work: 'Piano Concerto in G major', persona: '感知仍敏锐、表达开始受损的人。羞于暴露无能。' }
+    ]
+  },
+  {
+    id: 'satie',
+    name: '萨蒂',
+    mark: 'ES',
+    era: '先锋派前夜 · 蒙马特/阿尔克伊',
+    avatar: '',
+    intro: '他既古怪又清醒。问他重复、贫穷、酒馆和一把把伞，比问八卦更准。',
+    cards: [
+      { period: '冷家具音乐之前', year: '1888', event: '他写出几首像雾一样慢的钢琴小品，谁也说不准它们会活多久。', work: 'Gymnopédies', persona: '年轻的反叛者。故作冷淡，其实极怕被忽略。' },
+      { period: '维克萨西翁的长夜', year: '1893', event: '爱情和偏执纠缠在一起，一段短句被他逼成近乎无尽的重复。', work: 'Vexations', persona: '受伤后的怪人。用刻薄和荒诞遮挡真正的羞耻。' },
+      { period: '游行首演', year: '1917', event: '打字机、警笛和舞台噪声混进乐队，观众吵得比音乐还响。', work: 'Parade', persona: '故意冒犯体面的策展人。轻佻只是表层，骨子里算得很清。' },
+      { period: '阿尔克伊的小房间', year: '1924', event: '伞、纸片、旧信和未说完的笑话，把他的房间塞成一座私人档案馆。', work: 'Relâche', persona: '晚年的旁观者。贫穷、孤僻，却仍能拿自己开刀。' }
+    ]
+  },
+  {
+    id: 'prokofiev',
+    name: '普罗科菲耶夫',
+    mark: 'SP',
+    era: '现代主义/苏联 · 彼得格勒/莫斯科',
+    avatar: '',
+    intro: '他不是只会“钢铁般节奏”的人。流亡、归国、妥协和锋利幽默都值得追问。',
+    cards: [
+      { period: '离开彼得格勒', year: '1918', event: '革命后的港口风很硬，他带着谱子离开俄国，像带走另一种未来。', work: 'Classical Symphony, Op.25', persona: '年轻的挑衅者。爱挖苦，也真心相信自己更快。' },
+      { period: '给孩子讲狼', year: '1936', event: '归国后的空气复杂，他却先写了一部人人看得懂的童话。', work: 'Peter and the Wolf, Op.67', persona: '懂得策略的成熟作曲家。会笑，也会算哪一句能留下。' },
+      { period: '冰原上的骑士', year: '1938', event: '镜头和合唱一起推进，电影把他的锋利磨成了更广阔的回声。', work: 'Alexander Nevsky, Op.78', persona: '与影像谈判的人。务实，速度快，知道何处该让主题先行。' },
+      { period: '名单落下', year: '1948', event: '一纸批判把名字压进“形式主义”名单，他不得不重新计算每个音的代价。', work: 'Symphony No.6, Op.111', persona: '被制度围堵的名家。倔强还在，但说话开始先看门外。' }
+    ]
+  },
+  {
+    id: 'shostakovich',
+    name: '肖斯塔科维奇',
+    mark: 'DS',
+    era: '苏联现代主义 · 列宁格勒/莫斯科',
+    avatar: '',
+    intro: '别把他简化成“苦难天才”。问恐惧、黑色幽默、抽屉里的草稿和双重语言。',
+    cards: [
+      { period: '真理报头版', year: '1936', event: '一篇匿名社论像一把刀，把他从明星拖成了被监视的人。', work: 'Lady Macbeth of Mtsensk', persona: '惊惧中的青年名家。外表顺从，神经却始终绷着。' },
+      { period: '围城的广播声', year: '1942', event: '城市在饥饿中坚持，他的交响曲被抄成一种生存姿态。', work: 'Symphony No.7 “Leningrad”, Op.60', persona: '在灾难里被迫成为象征的人。疲惫，坚硬，不信任何单纯的口号。' },
+      { period: '再次点名', year: '1948', event: '批判会议之后，他得同时替国家写台词，也替自己留暗门。', work: 'From Jewish Folk Poetry, Op.79', persona: '公开场合会低头，内心仍在记账的人。' },
+      { period: '德累斯顿的八行字母', year: '1960', event: '他把名字缩成四个音，写给自己，也写给所有活着的人。', work: 'String Quartet No.8, Op.110', persona: '中年的幸存者。自嘲、绝望、清醒。' }
+    ]
+  },
+  {
+    id: 'herrmann',
+    name: '伯纳德·赫尔曼',
+    mark: 'BH',
+    era: '电影配乐黄金时代 · 纽约/好莱坞',
+    avatar: '',
+    intro: '他适合从控制欲、录音棚、导演冲突和“如何让恐惧发声”切入。',
+    cards: [
+      { period: '凯恩的天花板', year: '1941', event: '广播天才走进银幕，第一次把电影空间写得像会呼吸。', work: 'Citizen Kane', persona: '野心勃勃的新贵。嘴硬，反应快，愿意为了效果得罪人。' },
+      { period: '眩晕的螺旋', year: '1958', event: '他让爱情和恐惧缠成同一圈旋律，镜头开始像被音乐牵着走。', work: 'Vertigo', persona: '成熟的操盘手。知道观众会在何处失衡，也知道导演何处需要他。' },
+      { period: '弦乐淋浴间', year: '1960', event: '小预算逼出一把更锋利的刀，他用纯弦乐替惊吓找到了骨头。', work: 'Psycho', persona: '控制每一秒张力的人。强硬，不屑妥协。' },
+      { period: '录完最后一轨', year: '1975', event: '夜里录完《出租车司机》，他把疲惫和城市噪声一起封进母带。', work: 'Taxi Driver', persona: '晚年的硬汉。身体透支，审美却仍咬得很准。' }
+    ]
+  },
+  {
+    id: 'rota',
+    name: '尼诺·罗塔',
+    mark: 'NR',
+    era: '电影配乐/新古典主义 · 米兰/罗马',
+    avatar: '',
+    intro: '他不只有黑手党主题。问童心、马戏、费里尼、学院生活和旋律为何看似轻却总带苦味。',
+    cards: [
+      { period: '战后的大路', year: '1954', event: '马戏团、破路和小号一起出现，他让残忍长出了一张童话脸。', work: 'La Strada', persona: '把天真和哀伤拧在一起的人。温和，但不天真。' },
+      { period: '八又二分之一的片场', year: '1963', event: '导演的梦和现实混成一锅，他负责让混乱保持跳舞的步伐。', work: '8½', persona: '与导演默契极深的协作者。看似散漫，实际上极会收线。' },
+      { period: '教父的婚礼桌边', year: '1972', event: '一支主题同时像摇篮曲和家族誓言，观众几乎立刻记住了它。', work: 'The Godfather', persona: '旋律匠人。明白通俗与宿命可以同时成立。' },
+      { period: '音乐学院办公室', year: '1978', event: '学生、电影邀约和自己的宗教作品一起堆上桌，他仍写得像在呼吸。', work: 'Il Casanova di Federico Fellini', persona: '晚年的老练者。忙碌、慈和，对灵感的来去看得更淡。' }
+    ]
+  },
+  {
+    id: 'takemitsu',
+    name: '武满彻',
+    mark: 'TT',
+    era: '现代音乐/电影配乐 · 东京',
+    avatar: '',
+    intro: '他适合从寂静、战后记忆、自然、录音室和“如何让声音像空间本身”去问。',
+    cards: [
+      { period: '砂之女的空洞', year: '1964', event: '他替黑白影像写下干燥、悬置又近乎无底的声音。', work: 'Woman in the Dunes', persona: '自学成形的实验者。谨慎，敏锐，对声音边缘有执念。' },
+      { period: '尺八与琵琶之后', year: '1967', event: '西方乐队和日本传统器乐第一次在他手里变成同一片空气。', work: 'November Steps', persona: '把距离当作材料的人。安静，但判断极坚决。' },
+      { period: '乱的城墙外', year: '1985', event: '战旗和雾一起升起，他把古老暴力写得像一片会流动的地形。', work: 'Ran', persona: '成熟期的园丁。善于留白，不愿让情绪一次说尽。' },
+      { period: '雨树的最后叶脉', year: '1995', event: '病中的时间被拉长，他写出的线条反而更像呼吸本身。', work: 'Rain Tree Sketch II', persona: '临近终点的听风者。温和，透明，几乎不再与世界争执。' }
+    ]
+  }
+];
+
+const state = {
+  musicianId: 'mozart',
+  currentCard: null,
+  anchor: null,
+  history: [],
+  turn: 0,
+  busy: false
+};
+
+const picker = document.getElementById('musician-picker');
+const avatar = document.getElementById('avatar');
+const agentName = document.getElementById('agent-name');
+const agentEra = document.getElementById('agent-era');
+const fateCard = document.getElementById('fate-card');
+const grNote = document.getElementById('gr-note');
+const toolbarSub = document.getElementById('toolbar-sub');
+const turns = document.getElementById('turns');
+const feed = document.getElementById('feed');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send-btn');
+const drawBtn = document.getElementById('draw-btn');
+
+function currentMusician() {
+  return musicians.find(item => item.id === state.musicianId) || musicians[0];
+}
+
+function escapeHtml(text) {
+  return String(text || '').replace(/[&<>"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]));
+}
+
+function addMessage(role, name, text) {
+  const el = document.createElement('div');
+  el.className = 'msg' + (role === 'user' ? ' user' : role === 'system' ? ' system' : '');
+  el.innerHTML = '<span class="msg-head">' + escapeHtml(name) + '</span><span>' + escapeHtml(text) + '</span>';
+  feed.appendChild(el);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function renderMusician() {
+  const musician = currentMusician();
+  agentName.textContent = musician.name;
+  agentEra.textContent = musician.era;
+  avatar.style.backgroundImage = musician.avatar ? "url('" + musician.avatar + "')" : '';
+  avatar.textContent = musician.avatar ? '' : (musician.mark || musician.name.slice(0, 2));
+  grNote.textContent = musician.intro;
+}
+
+function renderCard(card) {
+  if (!card) {
+    fateCard.innerHTML = '<div class="fate-year">WAITING</div><div class="fate-period">先抽一张命运卡</div><div class="fate-event">这一页还没有展开。</div><div class="fate-work">作品线索：—</div>';
+    return;
+  }
+  fateCard.innerHTML =
+    '<div class="fate-year">' + escapeHtml(card.year) + '</div>' +
+    '<div class="fate-period">' + escapeHtml(card.period) + '</div>' +
+    '<div class="fate-event">' + escapeHtml(card.event) + '</div>' +
+    '<div class="fate-work">作品线索：' + escapeHtml(card.work) + '</div>';
+}
+
+function renderTurns() {
+  turns.textContent = state.turn + ' / 3';
+  const ended = state.turn >= 3;
+  input.disabled = !state.currentCard || ended || state.busy;
+  sendBtn.disabled = !state.currentCard || ended || state.busy;
+  drawBtn.textContent = state.currentCard ? '再抽一张' : '抽命运卡';
+  if (ended) {
+    input.placeholder = '这一局已经封存，请抽下一张。';
+  } else if (state.currentCard) {
+    input.placeholder = '直接对他说一句具体的话';
+  } else {
+    input.placeholder = '先抽卡，再通信';
+  }
+}
+
+function resetSession(keepCard) {
+  state.turn = 0;
+  state.history = [];
+  if (!keepCard) {
+    state.currentCard = null;
+    state.anchor = null;
+  }
+  feed.innerHTML = '';
+  addMessage('system', 'Gr 小姐', keepCard && state.currentCard
+    ? '牌面已经展开。你有三次机会，别浪费在空话上。'
+    : '问题不必太大。问一句具体的话，历史才会回答。');
+  toolbarSub.textContent = state.currentCard
+    ? state.currentCard.year + ' · ' + state.currentCard.period + ' · ' + currentMusician().name
+    : '抽卡后开始。每局会锁定一个人生时刻。';
+  renderCard(state.currentCard);
+  renderTurns();
+}
+
+function drawCard() {
+  const musician = currentMusician();
+  const cards = musician.cards;
+  const next = cards[Math.floor(Math.random() * cards.length)];
+  state.currentCard = { ...next, musicianId: musician.id, musicianName: musician.name };
+  state.anchor = { ...state.currentCard };
+  resetSession(true);
+  addMessage('system', 'Gr 小姐', '这是' + musician.name + '的' + state.currentCard.year + '年。别问一生，先问今晚。');
+  grNote.textContent = '切口：' + state.currentCard.event;
+}
+
+function fallbackReply(text) {
+  const musician = currentMusician();
+  const card = state.currentCard;
+  const prompts = {
+    mozart: [
+      '你这句话让我先去看了桌角的账单。纸比人更诚实。',
+      '若你在剧院里看见我，你会发现我先听见的是椅子挪动声，不是掌声。',
+      '这件事我不肯在信里写满，只肯留一个转音。'
+    ],
+    beethoven: [
+      '你问得太近了。我先把这句话按在桌面上，免得它发抖。',
+      '若我不回答得温和，不是因为轻视你，是因为我向来先和自己动手。',
+      '窗外的风比人诚实。它从不假装理解我。'
+    ],
+    bach: [
+      '你这一问，倒像把我桌上那本总谱又翻开了一页。',
+      '别急着把秩序看成冷酷。许多热情，正是靠它才站得住。',
+      '若你听见的是规矩，我听见的却常是规矩底下那点顽固。'
+    ],
+    chopin: [
+      '你这句话太响了，我得把它说轻一点，免得惊动胸口。',
+      '巴黎的客厅总爱装得体面，真正诚实的往往只有琴键。',
+      '有些事我宁可写成一个倚音，也不愿当面承认。'
+    ],
+    debussy: [
+      '别把我逼回教科书里。那样的光，一落地就俗了。',
+      '你说的这件事，像窗上水汽，擦掉一层后才看见形状。',
+      '我并不总想解释自己。雾若太快散尽，也就不成其为雾。'
+    ],
+    ravel: [
+      '先把误会摆整齐，再来谈感情。我向来习惯这样做。',
+      '你听见的是工整，我记住的却往往是工整背后的发热。',
+      '若一切都太用力，细节就先死了。'
+    ],
+    satie: [
+      '你问得像个正经人，这让我有点想故意答歪。',
+      '别怕重复。许多真心话，本来就得绕几圈才肯露面。',
+      '我房里东西很多，能留下来的却未必是最体面的那一件。'
+    ],
+    prokofiev: [
+      '你这句话有点刀口。我不讨厌，只是得先试试锋面。',
+      '世界常逼人把棱角磨圆，我偶尔也会假装顺手。',
+      '若我回答得快，不代表我没有迟疑，只是懒得给它看见。'
+    ],
+    shostakovich: [
+      '有些话得先在牙后面放一放，确认门外没人。',
+      '你若听见我在开玩笑，多半只是因为别的说法更危险。',
+      '纸会记住重量。人有时不会。'
+    ],
+    herrmann: [
+      '你别先谈温柔。先听见那一下不舒服的摩擦声。',
+      '镜头会撒谎，配乐得替它把真正的脉搏拽出来。',
+      '若我显得不近人情，那多半只是因为节奏不能被哄着走。'
+    ],
+    rota: [
+      '你看见的是旋律，我先看见的往往是旋律背后那点苦相。',
+      '马戏团会笑，笑声里却总有一点旧灰。',
+      '别急着把轻快当成轻薄。它有时只是另一种忍耐。'
+    ],
+    takemitsu: [
+      '先别填满它。空白若还活着，声音才有地方落下。',
+      '风经过树叶时，比许多大声解释更接近答案。',
+      '我并不急着把情绪说清。让它在空气里停一下，也许更准。'
+    ]
+  };
+  const bank = prompts[musician.id] || prompts.mozart;
+  const prefix = bank[state.turn % bank.length];
+  return prefix + ' 你提到“' + text.slice(0, 12) + '”，我会把它留在' + card.period + '这一页。';
+}
+
+async function fetchReply(message) {
+  const musician = currentMusician();
+  const res = await fetch('/api/letter-agent', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      mode: 'musician',
+      musicianId: musician.id,
+      musicianName: musician.name,
+      message,
+      card: state.currentCard,
+      anchor: state.anchor,
+      turn: state.turn,
+      history: state.history.slice(-6)
+    })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return String(data.reply || '').trim();
+}
+
+async function sendMessage(event) {
+  event.preventDefault();
+  const text = input.value.trim();
+  if (!text || !state.currentCard || state.busy || state.turn >= 3) return;
+
+  state.busy = true;
+  renderTurns();
+  addMessage('user', '你', text);
+  state.history.push({ role: 'user', text });
+  input.value = '';
+
+  try {
+    const reply = await fetchReply(text);
+    const content = reply || fallbackReply(text);
+    addMessage('assistant', currentMusician().name, content);
+    state.history.push({ role: 'musician', text: content });
+  } catch (error) {
+    const content = fallbackReply(text);
+    addMessage('assistant', currentMusician().name, content);
+    state.history.push({ role: 'musician', text: content });
+  }
+
+  state.turn += 1;
+  state.busy = false;
+  renderTurns();
+
+  if (state.turn >= 3) {
+    addMessage('system', 'Gr 小姐', '够了。这一页到此为止。你可以抽下一张，换一个时刻再试。');
+  }
+}
+
+picker.innerHTML = musicians.map(item => '<option value="' + item.id + '">' + item.name + '</option>').join('');
+picker.addEventListener('change', () => {
+  state.musicianId = picker.value;
+  renderMusician();
+  resetSession(false);
+});
+drawBtn.addEventListener('click', drawCard);
+document.getElementById('reset-btn').addEventListener('click', () => resetSession(false));
+document.getElementById('composer').addEventListener('submit', sendMessage);
+
+renderMusician();
+resetSession(false);
+</script>
+</body>
+</html>
