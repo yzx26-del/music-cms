@@ -1,6 +1,11 @@
 .DS_Store
 
-*.zip
+.DS_Store
+.vercel/
+letteragent-debug-package/
+letteragent-debug-package.zip
+archive/
+temp/
 
 node_modules
 
