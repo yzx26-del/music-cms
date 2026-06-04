@@ -310,6 +310,19 @@ tbody tr:hover{background:var(--bg2)}
 .tsep{width:1px;height:14px;background:var(--line);margin:0 4px}
 .ebody{width:100%;min-height:240px;padding:18px;font-size:13px;line-height:1.9;color:var(--t1);font-family:var(--sans);outline:none;border:none;background:transparent;resize:none}
 .efoot{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;background:var(--bg2);border-top:1px solid var(--line);font-family:var(--mono);font-size:9px;color:var(--t4)}
+.secretary-layout{display:grid;grid-template-columns:minmax(340px,.95fr) minmax(360px,1.05fr);gap:18px;align-items:start}
+.secretary-panel{border:1px solid var(--line);border-radius:4px;background:var(--bg);overflow:hidden}
+.secretary-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:var(--bg2);border-bottom:1px solid var(--line)}
+.secretary-head strong{font-size:12px}
+.secretary-head span{font-family:var(--mono);font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:.08em}
+.secretary-body{padding:14px}
+.secretary-tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.secretary-tools .ib{height:30px;padding:0 10px}
+.secretary-input{min-height:168px;resize:vertical}
+.secretary-output{min-height:420px;border:1px solid var(--line);border-radius:4px;background:var(--bg2);padding:16px;font-size:13px;line-height:1.9;color:var(--t2);white-space:pre-wrap}
+.secretary-output.empty{display:flex;align-items:center;justify-content:center;text-align:center;color:var(--t4)}
+.secretary-output.loading{display:flex;align-items:center;gap:8px;color:var(--t4);font-family:var(--mono);font-size:11px}
+@media(max-width:980px){.secretary-layout{grid-template-columns:1fr}}
 .kboard{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .kcol{background:var(--bg2);border-radius:4px;border:1px solid var(--line);padding:12px}
 .kct{font-family:var(--mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--t4);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
@@ -500,6 +513,7 @@ select.fi{cursor:pointer}
     <div class="nl">内容创作</div>
     <div class="ni" onclick="go('articles',this)"><i class="ti ti-article"></i>稿件管理<span class="nb" id="nb-articles">—</span></div>
     <div class="ni" onclick="go('editor',this)"><i class="ti ti-pencil"></i>写作台</div>
+    <div class="ni" onclick="go('secretary',this)"><i class="ti ti-notebook"></i>秘书处</div>
     <div class="ni" onclick="go('reviewdice',this)"><i class="ti ti-cards"></i>乐评骰子</div>
     <div class="ni" onclick="go('dailyplaylist',this)"><i class="ti ti-playlist"></i>每日歌单</div>
     <div class="ni" onclick="go('assets',this)"><i class="ti ti-files"></i>资料库<span class="nb" id="nb-assets">—</span></div>
@@ -738,6 +752,60 @@ select.fi{cursor:pointer}
       <div class="tw">
         <div style="padding:12px 14px;border-bottom:1px solid var(--line)"><div class="fl" style="margin-bottom:5px">状态</div><select class="fi" id="editor-status" style="height:30px;padding:0 10px;font-size:12px"><option value="topic">选题</option><option value="collecting">资料收集中</option><option value="writing">撰写中</option><option value="review">事实核查</option><option value="layout">排版</option><option value="published">已发布</option><option value="archived">归档</option></select></div>
         <div style="padding:12px 14px"><div class="fl" style="margin-bottom:5px">关联项目</div><select class="fi" id="editor-project" style="height:30px;padding:0 10px;font-size:12px"><option value="">— 选择关联项目 —</option></select></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 秘书处 -->
+<div class="page" id="pg-secretary">
+  <div class="ph"><div><div class="ptitle">秘书处</div><div class="psub">个人写作智能体 · DeepSeek Pro · 选题/初稿/改稿/乐理分析</div></div></div>
+  <div class="secretary-layout">
+    <div class="secretary-panel">
+      <div class="secretary-head"><strong>输入区</strong><span>Task Desk</span></div>
+      <div class="secretary-body">
+        <div class="secretary-tools">
+          <button class="ib" onclick="secretaryQuickTask('选题拆解')">选题拆解</button>
+          <button class="ib" onclick="secretaryQuickTask('文案初稿')">文案初稿</button>
+          <button class="ib" onclick="secretaryQuickTask('改成我的口吻')">改成我的口吻</button>
+          <button class="ib" onclick="secretaryQuickTask('乐理分析')">乐理分析</button>
+          <button class="ib" onclick="secretaryQuickTask('软性植入')">软性植入</button>
+          <button class="ib" onclick="secretaryQuickTask('标题开头')">标题开头</button>
+          <button class="ib" onclick="secretaryQuickTask('口播稿整理')">口播稿整理</button>
+        </div>
+        <div class="fg">
+          <label class="fl">任务类型</label>
+          <select class="fi" id="secretary-task">
+            <option value="选题拆解">选题拆解</option>
+            <option value="文案初稿">文案初稿</option>
+            <option value="改成我的口吻">改成我的口吻</option>
+            <option value="乐理分析">乐理分析</option>
+            <option value="软性植入">软性植入</option>
+            <option value="标题开头">标题开头</option>
+            <option value="口播稿整理">口播稿整理</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="fl">具体要求</label>
+          <textarea class="fi secretary-input" id="secretary-requirement" placeholder="例如：先给出结构判断，再写成适合 B 站口播的版本，语气克制一点。"></textarea>
+        </div>
+        <div class="fg">
+          <label class="fl">原始材料 / 待改文本</label>
+          <textarea class="fi secretary-input" id="secretary-draft" placeholder="把选题素材、零散观点、段落草稿或要分析的歌词/编曲描述贴在这里。"></textarea>
+        </div>
+        <div class="mfoot" style="margin-top:0;padding-top:0;border-top:0">
+          <button class="ib solid" id="secretary-send-btn" onclick="sendSecretary()"><i class="ti ti-send"></i>发送</button>
+        </div>
+      </div>
+    </div>
+    <div class="secretary-panel">
+      <div class="secretary-head"><strong>输出区</strong><span id="secretary-status">DeepSeek Pro</span></div>
+      <div class="secretary-body">
+        <div id="secretary-output" class="secretary-output empty">秘书处会在这里整理选题、起草文案、改写口吻或做听感导向的乐理分析。</div>
+        <div class="mfoot">
+          <button class="ib" onclick="copySecretaryOutput()"><i class="ti ti-copy"></i>复制</button>
+          <button class="ib solid" onclick="sendSecretaryToEditor()"><i class="ti ti-arrow-right"></i>送到写作台</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1103,6 +1171,7 @@ const RAWG_KEY   = '75d8d7aa7a724b84a7c3c560efbf64fd';
 const LASTFM_KEY = '92282476874fb4eb82b58d13d129bfdc';
 let db = null, projectsCache = [], articlesCache = [];
 const API_ORIGIN = location.protocol === 'file:' || location.hostname === 'cms.gracehe.cn' ? 'https://xhbzbox.vercel.app' : '';
+let secretaryHistory = [];
 let currentDicePlaylist = null;
 let pendingPlaylistSongIndex = null;
 const DICE_CACHE_VERSION = '20260515-regenerate-1';
@@ -1180,7 +1249,7 @@ function go(id, el) {
   document.getElementById('pg-'+id)?.classList.add('on');
   if(el) el.classList.add('on');
   else document.querySelectorAll('.ni').forEach(n=>{if((n.getAttribute('onclick')||'').includes("'"+id+"'"))n.classList.add('on');});
-  const loaders=window.__loaders={projects:loadProjects,timeline:()=>{if(!needDb('tl-body'))return;loadProjectSelects();loadTimeline();},gamemap:gmInit,knowledge:()=>loadEntities(''),notes:()=>loadNotes(''),graph:loadGraph,articles:loadArticles,editor:loadEditorSelects,reviewdice:loadReviewDiceHome,dailyplaylist:loadDailyPlaylist,assets:()=>loadAssets(''),topics:()=>{loadTopics();loadTopicsSongs();},alert:loadAlert,heatmap:loadHeatmap,calendar:loadCalendar,mydata:loadMyData,copyright:loadCopyright};
+  const loaders=window.__loaders={projects:loadProjects,timeline:()=>{if(!needDb('tl-body'))return;loadProjectSelects();loadTimeline();},gamemap:gmInit,knowledge:()=>loadEntities(''),notes:()=>loadNotes(''),graph:loadGraph,articles:loadArticles,editor:loadEditorSelects,secretary:()=>Promise.resolve(),reviewdice:loadReviewDiceHome,dailyplaylist:loadDailyPlaylist,assets:()=>loadAssets(''),topics:()=>{loadTopics();loadTopicsSongs();},alert:loadAlert,heatmap:loadHeatmap,calendar:loadCalendar,mydata:loadMyData,copyright:loadCopyright};
   if(loaders[id]) later(()=>Promise.resolve(loaders[id]()).catch(e=>toast('加载慢或失败：'+e.message)),20);
 }
 window.go=go;
@@ -4030,6 +4099,88 @@ async function saveArticleContent() {
   document.getElementById('editor-saved').textContent='已保存 '+new Date().toLocaleTimeString();
 }
 function insertMd(prefix,suffix=''){const ta=document.getElementById('editor-body');const s=ta.selectionStart,e=ta.selectionEnd;const sel=ta.value.substring(s,e);ta.value=ta.value.substring(0,s)+prefix+sel+suffix+ta.value.substring(e);ta.focus();}
+
+// ══ SECRETARY ══
+function secretaryQuickTask(type){
+  const taskEl=document.getElementById('secretary-task');
+  const reqEl=document.getElementById('secretary-requirement');
+  if(taskEl) taskEl.value=type;
+  const presets={
+    '选题拆解':'请先判断这个题值不值得做，再给切口、结构和风险点。',
+    '文案初稿':'请直接输出可发的初稿，适合 B 站/小红书/视频口播。',
+    '改成我的口吻':'保留信息密度，但改成更像 Grace 的表达。',
+    '乐理分析':'请把乐理、编曲和听感翻译到普通听众也能理解。',
+    '软性植入':'品牌只轻放一笔，不要硬广，不要抢掉内容重心。',
+    '标题开头':'给我 5 个标题方向和 3 个开头切口。',
+    '口播稿整理':'按口播节奏断句，句子不要太长。'
+  };
+  if(reqEl && !reqEl.value.trim()) reqEl.value=presets[type]||'';
+  reqEl?.focus();
+}
+async function sendSecretary(){
+  const task=document.getElementById('secretary-task')?.value?.trim()||'选题拆解';
+  const requirement=document.getElementById('secretary-requirement')?.value?.trim()||'';
+  const draft=document.getElementById('secretary-draft')?.value?.trim()||'';
+  if(!requirement && !draft){toast('请先填写具体要求或原始材料');return;}
+  const outputEl=document.getElementById('secretary-output');
+  const statusEl=document.getElementById('secretary-status');
+  const btn=document.getElementById('secretary-send-btn');
+  const message=`任务类型：${task}\n具体要求：${requirement||'无'}\n原始材料：${draft||'无'}`;
+  outputEl.className='secretary-output loading';
+  outputEl.innerHTML='<div class="spinner"></div><span>秘书处正在整理内容…</span>';
+  statusEl.textContent='DeepSeek 请求中';
+  if(btn) btn.disabled=true;
+  try{
+    const res=await fetch(API_ORIGIN+'/api/secretary',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        task,
+        requirement,
+        draft,
+        message,
+        history:secretaryHistory,
+        max_tokens:2200,
+        temperature:0.68
+      })
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data?.error||'秘书处暂时不可用');
+    const reply=String(data?.reply||'').trim();
+    if(!reply) throw new Error('秘书处没有返回内容');
+    secretaryHistory.push({role:'user',content:message},{role:'assistant',content:reply});
+    secretaryHistory=secretaryHistory.slice(-10);
+    outputEl.className='secretary-output';
+    outputEl.textContent=reply;
+    statusEl.textContent=`${data?.model||'DeepSeek'} · 已完成`;
+  }catch(error){
+    outputEl.className='secretary-output';
+    outputEl.textContent='请求失败：'+error.message;
+    statusEl.textContent='请求失败';
+    toast('秘书处调用失败：'+error.message);
+  }finally{
+    if(btn) btn.disabled=false;
+  }
+}
+async function copySecretaryOutput(){
+  const text=document.getElementById('secretary-output')?.textContent?.trim()||'';
+  if(!text || text.includes('秘书处会在这里')){toast('当前没有可复制内容');return;}
+  await navigator.clipboard.writeText(text);
+  toast('已复制到剪贴板');
+}
+function sendSecretaryToEditor(){
+  const text=document.getElementById('secretary-output')?.textContent?.trim()||'';
+  if(!text || text.includes('秘书处会在这里')){toast('当前没有可送出的内容');return;}
+  const editor=document.getElementById('editor-body');
+  if(editor) editor.value=text;
+  onEditorInput();
+  go('editor',null);
+  toast('已送到写作台');
+}
+window.secretaryQuickTask=secretaryQuickTask;
+window.sendSecretary=sendSecretary;
+window.copySecretaryOutput=copySecretaryOutput;
+window.sendSecretaryToEditor=sendSecretaryToEditor;
 
 // ══ ASSETS ══
 async function loadAssets(type='') {
